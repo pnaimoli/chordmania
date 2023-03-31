@@ -4,6 +4,8 @@ import copy
 import random
 import music21
 import numpy as np
+import os
+import tempfile
 
 us = music21.environment.UserSettings()
 us['musicxmlPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
@@ -21,6 +23,8 @@ class CMChordGenerator(object):
         md.title = "ChordMania Practice"
         md.composer = "ChordMania"
         md.movementName = "{} Chords".format(num_chords)
+        if key:
+            md.movementName += " in " + key.name.replace("-", "b")
         self.stream.append(md)
         part = music21.instrument.Piano()
         part.partName = "Piano"
@@ -39,7 +43,7 @@ class CMChordGenerator(object):
             # Set the first measure's KeySignature
             if num_measures == 0:
                 if key:
-                    m.append(music21.key.Key(key))
+                    m.append(key)
                 else:
                     m.append(music21.key.KeySignature(random.choice(ALL_KEY_SIGNATURES)))
 
@@ -56,7 +60,7 @@ class CMChordGenerator(object):
             self.stream.append(m)
 
         # Debug: print out a text version of the whole stream
-        print(self.stream.show('text'))
+#        print(self.stream.show('text'))
 #        print(list(self.stream.getElementsByClass(music21.key.KeySignature)))
 
 
@@ -102,30 +106,36 @@ class CMChordGenerator(object):
         # Randomly invert.  Is there a cleaner way to do this with
         # the music21 API?  chord inversion doesn't always work...
         chord = copy.deepcopy(chord)
-        print(chord.pitches)
         pitches = [None]*len(chord)
         inversion = random.choice(range(len(chord)))
-        print(inversion)
         for i in range(len(chord)):
             pitches[i-inversion] = chord.pitches[i]
             if i < inversion:
                 pitches[i-inversion].transpose(music21.interval.GenericInterval(8), inPlace=True)
-        print(pitches)
         return music21.chord.Chord(pitches, type="whole").simplifyEnharmonics
 
 
-    def render(self, out="score.png"):
-#        self.stream.write(fmt="musicxml.png", fp="score.png")
-        self.stream.write(fmt="midi", fp="ChordMania.midi")
-        self.stream.write(fmt="musicxml", fp="ChordMania.xml")
-        self.stream.show(fmt="musicxml.png")
+    def render(self, include_bass=False):
+        with tempfile.TemporaryDirectory() as tmp:
+            temp_filename = os.path.join(tmp, next(tempfile._get_candidate_names()) + ".musicxml")
+            self.stream.write(fmt="musicxml", fp=temp_filename)
+            with open(temp_filename, 'r') as fin:
+                print(fin.read())
+
+        # Debug stuff
+#        self.stream.write(fmt="midi", fp="ChordMania.midi")
+#        self.stream.write(fmt="musicxml.png", fp="ChordMania.png")
+#        self.stream.show(fmt="musicxml.png")
 
 if __name__== "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-k", "--key", help="Key Signature")
-    parser.add_argument("-c", "--chords", default=100, help="Number of chords")
-    parser.add_argument("-n", "--notes", default=4, help="Number of notes per chords")
+    parser = argparse.ArgumentParser(
+            prog='ChordMania',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-k", "--key", type=music21.key.Key, help="Key Signature.  Use '-' for flats and lowercase minor.")
+    parser.add_argument("-c", "--chords", default=100, type=int, help="Number of chords")
+    parser.add_argument("-n", "--notes", default=4, type=int, help="Number of notes per chords")
+    parser.add_argument("-b", "--bass", action='store_true', help="Include an optional empty bass clef")
     args = parser.parse_args()
 
     cg = CMChordGenerator(args.notes, args.chords, key=args.key)
-    cg.render()
+    cg.render(include_bass=args.bass)
