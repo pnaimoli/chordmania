@@ -1,4 +1,3 @@
-# FileName PyQt5MenuProblem.py
 import argparse
 import copy
 import random
@@ -131,7 +130,8 @@ if __name__== "__main__":
     parser = argparse.ArgumentParser(
             prog='ChordMania',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-k", "--key", type=music21.key.Key, help="Key Signature.  Use '-' for flats and lowercase minor.")
+    parser.add_argument("-k", "--key", type=music21.key.Key,
+                        help="Key Signature.  Use '-' for flats and lowercase letters for minor.")
     parser.add_argument("-c", "--chords", default=100, type=int, help="Number of chords")
     parser.add_argument("-n", "--notes", default=4, type=int, help="Number of notes per chords")
     parser.add_argument("-b", "--bass", action='store_true', help="Include an optional empty bass clef")

@@ -9,6 +9,7 @@ ChordMania will generate a worksheet of random complicated chords to help.
 
 ## Requirements
 [python3](https://www.python.org/downloads/)
+[music21](http://web.mit.edu/music21/)
 
 But really you'll just have to run the program to find out.
 
