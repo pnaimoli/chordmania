@@ -1,8 +1,8 @@
 import argparse
 import copy
+import itertools
 import random
 import music21
-import numpy as np
 import os
 import tempfile
 
@@ -77,8 +77,15 @@ class CMChordGenerator(object):
         # 1) Can't have more than 2 consecutive semi-tones
         # 2) ?
         def longest_cluster(notes):
-            a = np.split(notes, np.where(np.diff(notes) != 1)[0] + 1) 
-            return len(max(a, key=len).tolist())
+            if not notes:
+                return 0
+
+            next_to_previous_note = [abs(b - a) <= 1 for (a, b) in zip(notes[:-1], notes[1:])]
+
+            if True not in next_to_previous_note:
+                return 1
+
+            return max(len(list(y)) for (c,y) in itertools.groupby(next_to_previous_note) if c==True) + 1
             
         random_chord = music21.chord.Chord(type="whole")
         while len(random_chord) < self.notes_per_chord:
@@ -94,7 +101,7 @@ class CMChordGenerator(object):
 
             # Until Synthesia can render better sheet music, disallow
             # any adjacent notes
-            if longest_cluster([p.midi for p in random_chord.pitches]) > 1:
+            if longest_cluster([p.midi for p in random_chord.pitches]) > 3:
                 random_chord.remove(note_to_add)
                 continue
 
