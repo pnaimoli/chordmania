@@ -12,6 +12,10 @@ us['musescoreDirectPNGPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/ms
 
 ALL_KEY_SIGNATURES = range(-6,7) # Every key (negatives=flats, positives=sharps)
 
+# I'm not interested in performance, I just want to eliminate duplicates
+# in one line by using a python set
+music21.chord.Chord.__hash__ = lambda self: 0
+
 class CMChordGenerator(object):
     def __init__(self, notes_per_chord, num_chords, key=None):
         self.notes_per_chord = notes_per_chord
@@ -32,7 +36,7 @@ class CMChordGenerator(object):
 
         while True:
             m = music21.stream.Measure()
-            num_measures = len(self.stream.getElementsByClass(music21.stream.Measure))
+            num_measures = len(self._get_all_chords())
             m.number = num_measures + 1
 
             # Keep adding measures until we have 100 of them
@@ -48,13 +52,17 @@ class CMChordGenerator(object):
 
             # Generate a random chord and transpose it
             random_chord = self.generate_chord()
-            random_chord = random_chord.transpose(random.choice(range(0,12))).simplifyEnharmonics()
+            random_chord = random_chord.transpose(random.choice(range(0,12))).simplifyEnharmonics(keyContext=key)
 
             # Don't include it for now if two adjacent notes would take up the same space
             if random_chord.hasAnyRepeatedDiatonicNote():
                 continue
 
             # Update the measure and add it to our stream
+#            random_chord.lyric = random_chord.pitchedCommonName
+#            cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
+#            if cs_string != 'Chord Symbol Cannot Be Identified':
+#                m.append(music21.harmony.ChordSymbol(cs_string))
             m.append(random_chord)
             self.stream.append(m)
 
@@ -120,8 +128,16 @@ class CMChordGenerator(object):
                 pitches[i-inversion].transpose(music21.interval.GenericInterval(8), inPlace=True)
         return music21.chord.Chord(pitches, type="whole").simplifyEnharmonics
 
+    def _get_all_chords(self):
+        return self.stream.recurse().getElementsByClass(music21.chord.Chord)
+
+    def _get_unique_chords(self):
+        return set(self._get_all_chords())
 
     def render(self, include_bass=False):
+        # Finalize some metadata
+        md = self.stream.getElementsByClass(music21.metadata.Metadata).stream().next()
+        md["description"] = "{}/{} unique chords.".format(len(self._get_unique_chords()), len(self._get_all_chords()))
         with tempfile.TemporaryDirectory() as tmp:
             temp_filename = os.path.join(tmp, next(tempfile._get_candidate_names()) + ".musicxml")
             self.stream.write(fmt="musicxml", fp=temp_filename)
