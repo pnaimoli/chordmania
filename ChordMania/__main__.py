@@ -59,10 +59,17 @@ class CMChordGenerator(object):
                 continue
 
             # Update the measure and add it to our stream
-#            random_chord.lyric = random_chord.pitchedCommonName
-#            cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
-#            if cs_string != 'Chord Symbol Cannot Be Identified':
-#                m.append(music21.harmony.ChordSymbol(cs_string))
+            cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
+            if cs_string != 'Chord Symbol Cannot Be Identified':
+                try:
+                    # Sometimes you get a weird exception like:
+                    # "-poweradda is not a supported accidental type" or
+                    # "#m/aadde- is not a supported accidental type"
+                    # I don't know exactly what the problem is, but let's just
+                    # not annotate those chords
+                    m.append(music21.harmony.ChordSymbol(cs_string))
+                except music21.pitch.AccidentalException as e:
+                    pass
             m.append(random_chord)
             self.stream.append(m)
 
@@ -129,7 +136,10 @@ class CMChordGenerator(object):
         return music21.chord.Chord(pitches, type="whole").simplifyEnharmonics
 
     def _get_all_chords(self):
-        return self.stream.recurse().getElementsByClass(music21.chord.Chord)
+        # ChordSymbol derives from Chord, so we need to filter out only
+        # the Chords since getElementsByClass will return both.
+        return [e for e in self.stream.recurse().getElementsByClass(music21.chord.Chord)
+                if e.__class__ is music21.chord.Chord]
 
     def _get_unique_chords(self):
         return set(self._get_all_chords())
