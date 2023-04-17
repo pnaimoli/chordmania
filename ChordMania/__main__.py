@@ -19,27 +19,36 @@ music21.chord.Chord.__hash__ = lambda self: 0
 
 logger = logging.getLogger("ChordMania")
 
-class CMChordGenerator(object):
-    def __init__(self, notes_per_chord, num_chords, key=None):
+class CMRandomChordGenerator(object):
+    def __init__(self, notes_per_chord, num_chords, key, both_hands):
         self.notes_per_chord = notes_per_chord
 
         # Create our stream!
         self.stream = music21.stream.Stream()
         md = music21.metadata.Metadata()
-        md.title = "ChordMania Practice"
+        md.title = "Random {} Practice".format(key.name.replace("-", "b"))
         md.composer = "ChordMania"
         md.movementName = "{} Chords".format(num_chords)
-        if key:
-            md.movementName += " in " + key.name.replace("-", "b")
         self.stream.append(md)
-        part = music21.instrument.Piano()
-        part.partName = "Piano"
-        self.stream.append(part)
-        self.stream.append(music21.meter.TimeSignature('4/4'))
+
+        parts = [self._generate_part(notes_per_chord, num_chords, key)]
+        if both_hands:
+            parts.append(self._generate_part(notes_per_chord, num_chords, key, left_hand=True))
+            staffGroup = music21.layout.StaffGroup(parts, name='Piano', abbreviation='Pno.', symbol='brace')
+            staffGroup.barTogether = 'Mensurstrich'
+            self.stream.append(staffGroup)
+
+        self.stream.append(parts)
+
+    def _generate_part(self, notes_per_chord, num_chords, key, left_hand=False):
+        part = music21.stream.PartStaff()
+        instrument = music21.instrument.Piano()
+        instrument.partName = "Piano"
+        part.append(instrument)
 
         while True:
             m = music21.stream.Measure()
-            num_measures = len(self._get_all_chords())
+            num_measures = len(self._get_all_chords(part))
             m.number = num_measures + 1
 
             # Keep adding measures until we have 100 of them
@@ -48,13 +57,18 @@ class CMChordGenerator(object):
 
             # Set the first measure's KeySignature
             if num_measures == 0:
-                if key:
-                    m.append(key)
+                if left_hand == True:
+                    m.append(music21.clef.BassClef())
                 else:
-                    m.append(music21.key.KeySignature(random.choice(ALL_KEY_SIGNATURES)))
+                    m.append(music21.clef.TrebleClef())
+                m.append(music21.meter.TimeSignature('4/4'))
+
+                m.append(key)
 
             # Generate a random chord and transpose it
             random_chord = self.generate_chord()
+            if left_hand == True:
+                random_chord = random_chord.transpose(-24)
             random_chord = random_chord.transpose(random.choice(range(0,12))).simplifyEnharmonics(keyContext=key)
 
             # Don't include it for now if two adjacent notes would take up the same space
@@ -62,28 +76,22 @@ class CMChordGenerator(object):
                 continue
 
             # Update the measure and add it to our stream
-            cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
-            if cs_string != 'Chord Symbol Cannot Be Identified':
-                try:
-                    # Sometimes you get a weird exception like:
-                    # "-poweradda is not a supported accidental type" or
-                    # "#m/aadde- is not a supported accidental type"
-                    # I don't know exactly what the problem is, but let's just
-                    # not annotate those chords
-                    m.append(music21.harmony.ChordSymbol(cs_string))
-                except music21.pitch.AccidentalException as e:
-                    pass
+            if left_hand == False:
+                cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
+                if cs_string != 'Chord Symbol Cannot Be Identified':
+                    try:
+                        # Sometimes you get a weird exception like:
+                        # "-poweradda is not a supported accidental type" or
+                        # "#m/aadde- is not a supported accidental type"
+                        # I don't know exactly what the problem is, but let's just
+                        # not annotate those chords
+                        m.append(music21.harmony.ChordSymbol(cs_string))
+                    except music21.pitch.AccidentalException as e:
+                        pass
             m.append(random_chord)
-            self.stream.append(m)
+            part.append(m)
 
-        # Debug: print out a text version of the whole stream
-#        print(self.stream.show('text'))
-#        print(list(self.stream.getElementsByClass(music21.key.KeySignature)))
-
-
-#        test_pitches = (music21.pitch.Pitch("C#4"), music21.pitch.Pitch("D#4"), music21.pitch.Pitch("A#4"), music21.pitch.Pitch("B4"))
-#        test_chord = music21.chord.Chord(test_pitches, type="whole")
-#        self.stream.append(test_chord)
+        return part
 
     def generate_chord(self):
         # Start off with an octave full of notes.  60 is MIDI for
@@ -138,19 +146,19 @@ class CMChordGenerator(object):
                 pitches[i-inversion].transpose(music21.interval.GenericInterval(8), inPlace=True)
         return music21.chord.Chord(pitches, type="whole").simplifyEnharmonics
 
-    def _get_all_chords(self):
+    def _get_all_chords(self, parent):
         # ChordSymbol derives from Chord, so we need to filter out only
         # the Chords since getElementsByClass will return both.
-        return [e for e in self.stream.recurse().getElementsByClass(music21.chord.Chord)
+        return [e for e in parent.recurse().getElementsByClass(music21.chord.Chord)
                 if e.__class__ is music21.chord.Chord]
 
-    def _get_unique_chords(self):
-        return set(self._get_all_chords())
+    def _get_unique_chords(self, parent):
+        return set(self._get_all_chords(parent))
 
-    def render(self, include_bass=False):
+    def render(self):
         # Finalize some metadata
         md = self.stream.getElementsByClass(music21.metadata.Metadata).stream().next()
-        md["description"] = "{}/{} unique chords.".format(len(self._get_unique_chords()), len(self._get_all_chords()))
+        md["description"] = "{}/{} unique chords.".format(len(self._get_unique_chords(self.stream)), len(self._get_all_chords(self.stream)))
         with tempfile.TemporaryDirectory() as tmp:
             temp_filename = os.path.join(tmp, next(tempfile._get_candidate_names()) + ".musicxml")
             self.stream.write(fmt="musicxml", fp=temp_filename)
@@ -170,7 +178,7 @@ if __name__== "__main__":
                         help="Key Signature.  Use '-' for flats and lowercase letters for minor.")
     parser.add_argument("-c", "--chords", default=100, type=int, help="Number of chords")
     parser.add_argument("-n", "--notes", default=4, type=int, help="Number of notes per chords")
-    parser.add_argument("-b", "--bass", action='store_true', help="Include an optional empty bass clef")
+    parser.add_argument("-b", "--both_hands", action='store_true', help="Include both hands")
     parser.add_argument("-d", "--debug", help="Debug mode",
                         action="store_const", dest="loglevel", const=logging.DEBUG,
                         default=logging.WARNING)
@@ -183,5 +191,5 @@ if __name__== "__main__":
     if not args.key:
         args.key = music21.key.KeySignature(random.choice(ALL_KEY_SIGNATURES)).asKey()
 
-    cg = CMChordGenerator(args.notes, args.chords, key=args.key)
-    cg.render(include_bass=args.bass)
+    cg = CMRandomChordGenerator(args.notes, args.chords, key=args.key, both_hands=args.both_hands)
+    cg.render()
