@@ -1,6 +1,7 @@
 import argparse
 import copy
 import itertools
+import logging
 import random
 import music21
 import os
@@ -15,6 +16,8 @@ ALL_KEY_SIGNATURES = range(-6,7) # Every key (negatives=flats, positives=sharps)
 # I'm not interested in performance, I just want to eliminate duplicates
 # in one line by using a python set
 music21.chord.Chord.__hash__ = lambda self: 0
+
+logger = logging.getLogger("ChordMania")
 
 class CMChordGenerator(object):
     def __init__(self, notes_per_chord, num_chords, key=None):
@@ -155,9 +158,9 @@ class CMChordGenerator(object):
                 print(fin.read())
 
         # Debug stuff
-#        self.stream.write(fmt="midi", fp="ChordMania.midi")
-#        self.stream.write(fmt="musicxml.png", fp="ChordMania.png")
-#        self.stream.show(fmt="musicxml.png")
+        logger.debug(self.stream._reprText())
+        if logger.getEffectiveLevel() <= logging.DEBUG:
+            self.stream.show(fmt="musicxml.png")
 
 if __name__== "__main__":
     parser = argparse.ArgumentParser(
@@ -168,7 +171,17 @@ if __name__== "__main__":
     parser.add_argument("-c", "--chords", default=100, type=int, help="Number of chords")
     parser.add_argument("-n", "--notes", default=4, type=int, help="Number of notes per chords")
     parser.add_argument("-b", "--bass", action='store_true', help="Include an optional empty bass clef")
+    parser.add_argument("-d", "--debug", help="Debug mode",
+                        action="store_const", dest="loglevel", const=logging.DEBUG,
+                        default=logging.WARNING)
     args = parser.parse_args()
+
+    logging.basicConfig()
+    logger.setLevel(level=args.loglevel)
+
+    # Just pick a random Key if nothing is provided on the command line
+    if not args.key:
+        args.key = music21.key.KeySignature(random.choice(ALL_KEY_SIGNATURES)).asKey()
 
     cg = CMChordGenerator(args.notes, args.chords, key=args.key)
     cg.render(include_bass=args.bass)
