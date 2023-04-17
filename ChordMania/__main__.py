@@ -31,16 +31,16 @@ class CMRandomChordGenerator(object):
         md.movementName = "{} Chords".format(num_chords)
         self.stream.append(md)
 
-        parts = [self._generate_part(notes_per_chord, num_chords, key)]
+        parts = [self._generate_part(notes_per_chord, num_chords, key, False)]
         if both_hands:
-            parts.append(self._generate_part(notes_per_chord, num_chords, key, left_hand=True))
+            parts.append(self._generate_part(notes_per_chord, num_chords, key, True))
             staffGroup = music21.layout.StaffGroup(parts, name='Piano', abbreviation='Pno.', symbol='brace')
             staffGroup.barTogether = 'Mensurstrich'
             self.stream.append(staffGroup)
 
         self.stream.append(parts)
 
-    def _generate_part(self, notes_per_chord, num_chords, key, left_hand=False):
+    def _generate_part(self, notes_per_chord, num_chords, key, left_hand):
         part = music21.stream.PartStaff()
         instrument = music21.instrument.Piano()
         instrument.partName = "Piano"
@@ -55,7 +55,7 @@ class CMRandomChordGenerator(object):
             if num_measures >= num_chords:
                 break
 
-            # Set the first measure's KeySignature
+            # Set the first measure's Clef, TimeSignature, and KeySignature
             if num_measures == 0:
                 if left_hand == True:
                     m.append(music21.clef.BassClef())
@@ -68,6 +68,7 @@ class CMRandomChordGenerator(object):
             # Generate a random chord and transpose it
             random_chord = self.generate_chord()
             if left_hand == True:
+                # First move it down a bunch before we move it right back up
                 random_chord = random_chord.transpose(-24)
             random_chord = random_chord.transpose(random.choice(range(0,12))).simplifyEnharmonics(keyContext=key)
 
@@ -75,7 +76,8 @@ class CMRandomChordGenerator(object):
             if random_chord.hasAnyRepeatedDiatonicNote():
                 continue
 
-            # Update the measure and add it to our stream
+            # Update the measure with a ChordSymbol if possible.
+            # Only include ChordSymbols for the right hand at the moment.
             if left_hand == False:
                 cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
                 if cs_string != 'Chord Symbol Cannot Be Identified':
@@ -88,6 +90,8 @@ class CMRandomChordGenerator(object):
                         m.append(music21.harmony.ChordSymbol(cs_string))
                     except music21.pitch.AccidentalException as e:
                         pass
+
+            # Finally add the chord to the measure, and the measure to the stream
             m.append(random_chord)
             part.append(m)
 
@@ -125,8 +129,8 @@ class CMRandomChordGenerator(object):
             random_chord.add(note_to_add)
             random_chord.sortChromaticAscending()
 
-            # Until Synthesia can render better sheet music, disallow
-            # any adjacent notes
+            # Until Synthesia/MoonPiano/etc... can render better sheet music, disallow
+            # too many adjacent notes
             if longest_cluster([p.midi for p in random_chord.pitches]) > 3:
                 random_chord.remove(note_to_add)
                 continue
@@ -158,7 +162,7 @@ class CMRandomChordGenerator(object):
     def render(self):
         # Finalize some metadata
         md = self.stream.getElementsByClass(music21.metadata.Metadata).stream().next()
-        md["description"] = "{}/{} unique chords.".format(len(self._get_unique_chords(self.stream)), len(self._get_all_chords(self.stream)))
+        md["description"] = "{}/{} chords are unique.".format(len(self._get_unique_chords(self.stream)), len(self._get_all_chords(self.stream)))
         with tempfile.TemporaryDirectory() as tmp:
             temp_filename = os.path.join(tmp, next(tempfile._get_candidate_names()) + ".musicxml")
             self.stream.write(fmt="musicxml", fp=temp_filename)
