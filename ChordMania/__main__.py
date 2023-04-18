@@ -4,8 +4,8 @@ import itertools
 import logging
 import random
 import music21
+from music21.musicxml import m21ToXml
 import os
-import tempfile
 
 us = music21.environment.UserSettings()
 us['musicxmlPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
@@ -163,11 +163,11 @@ class CMRandomChordGenerator(object):
         # Finalize some metadata
         md = self.stream.getElementsByClass(music21.metadata.Metadata).stream().next()
         md["description"] = "{}/{} chords are unique.".format(len(self._get_unique_chords(self.stream)), len(self._get_all_chords(self.stream)))
-        with tempfile.TemporaryDirectory() as tmp:
-            temp_filename = os.path.join(tmp, next(tempfile._get_candidate_names()) + ".musicxml")
-            self.stream.write(fmt="musicxml", fp=temp_filename)
-            with open(temp_filename, 'r') as fin:
-                print(fin.read())
+
+        # Convert the music21 stream to MusicXML format and print to STDOUT
+        musicxml_exporter = m21ToXml.GeneralObjectExporter(self.stream)
+        musicxml_str = musicxml_exporter.parse().decode('utf-8')
+        print(musicxml_str)
 
         # Debug stuff
         logger.debug(self.stream._reprText())
