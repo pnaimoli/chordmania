@@ -19,7 +19,67 @@ music21.chord.Chord.__hash__ = lambda self: 0
 
 logger = logging.getLogger("ChordMania")
 
-class CMRandomChordGenerator(object):
+class CMFourFiveStreamGenerator(object):
+    def __init__(self, num_measures):
+        self.score = music21.stream.Score()
+
+        md = music21.metadata.Metadata()
+        md.title = "4/5 Stream Practice"
+        md.composer = "ChordMania"
+        self.score.append(md)
+
+        time_signature = music21.meter.TimeSignature('4/4')
+
+        right_hand = music21.stream.Part()
+        right_hand.insert(0, music21.instrument.Piano())
+        right_hand.insert(0, music21.clef.TrebleClef())
+        right_hand.insert(0, time_signature)
+
+        white_notes = self.get_white_notes_between('C4', 'C6')
+
+        current_root = music21.note.Note('C5')
+
+        for _ in range(num_measures):
+            for _ in range(8):
+                # Select next root note
+                step = random.choice([-2, -1, 0, 1, 2])
+                next_index = white_notes.index(current_root) + step
+                if 0 <= next_index < len(white_notes) - 5:
+                    pass
+                else:
+                    next_index = int(len(white_notes)/2)
+                current_root = white_notes[next_index]
+
+                # Generate random chord
+                interval = random.choice([3, 4])
+                chord = music21.chord.Chord([current_root, white_notes[next_index+interval]])
+                chord.quarterLength = 0.5
+                right_hand.append(chord)
+
+        self.score.insert(0, right_hand)
+
+    @staticmethod
+    def get_white_notes_between(start, end):
+        white_notes = []
+        current = music21.note.Note(start)
+        while current <= music21.note.Note(end):
+            if current.pitch.accidental is None:
+                white_notes.append(current)
+            current = music21.note.Note(current.pitch).transpose(1)
+        return white_notes
+
+    def render(self):
+        # Convert the music21 stream to MusicXML format and print to STDOUT
+        musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
+        musicxml_str = musicxml_exporter.parse().decode('utf-8')
+        print(musicxml_str)
+
+        # Debug stuff
+        logger.debug(self.score._reprText())
+        if logger.getEffectiveLevel() <= logging.DEBUG:
+            self.score.show(fmt="musicxml.png")
+
+class CMChordGenerator(object):
     def __init__(self, notes_per_chord, num_chords, key, both_hands):
         self.notes_per_chord = notes_per_chord
 
@@ -180,7 +240,7 @@ if __name__== "__main__":
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-k", "--key", type=music21.key.Key,
                         help="Key Signature.  Use '-' for flats and lowercase letters for minor.")
-    parser.add_argument("-c", "--chords", default=100, type=int, help="Number of chords")
+    parser.add_argument("-m", "--measures", default=100, type=int, help="Number of measures")
     parser.add_argument("-n", "--notes", default=4, type=int, help="Number of notes per chords")
     parser.add_argument("-b", "--both_hands", action='store_true', help="Include both hands")
     parser.add_argument("-d", "--debug", help="Debug mode",
@@ -195,5 +255,6 @@ if __name__== "__main__":
     if not args.key:
         args.key = music21.key.KeySignature(random.choice(ALL_KEY_SIGNATURES)).asKey()
 
-    cg = CMRandomChordGenerator(args.notes, args.chords, key=args.key, both_hands=args.both_hands)
+#    cg = CMChordGenerator(args.notes, args.measures, key=args.key, both_hands=args.both_hands)
+    cg = CMFourFiveStreamGenerator(args.measures)
     cg.render()
