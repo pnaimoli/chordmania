@@ -19,6 +19,32 @@ music21.chord.Chord.__hash__ = lambda self: 0
 
 logger = logging.getLogger("ChordMania")
 
+def has_adjacent_notes_exceeding_max_length(chord, max_length):
+    """
+    Check if a music21 chord has more than `max_length` adjacent notes.
+
+    Args:
+        chord (music21.chord.Chord): A music21 chord to check for adjacent notes.
+        max_length (int): The maximum length of adjacent notes allowed.
+
+    Returns:
+        bool: True if more than `max_length` adjacent notes are found, False otherwise.
+    """
+    sorted_notes = sorted(chord.pitches, key=lambda p: p.midi)
+
+    for i in range(1, len(sorted_notes)):
+        adjacent_notes_count = 1
+        for j in range(i, len(sorted_notes)):
+            if sorted_notes[j].midi == sorted_notes[j - 1].midi + 1:
+                adjacent_notes_count += 1
+                if adjacent_notes_count > max_length:
+                    return True
+            else:
+                break
+
+    return False
+
+
 class CMFourFiveStreamGenerator(object):
     def __init__(self, num_measures):
         self.score = music21.stream.Score()
@@ -106,17 +132,12 @@ class CMChordGenerator(object):
         instrument.partName = "Piano"
         part.append(instrument)
 
-        while True:
+        for measure_number in range(num_chords):
             m = music21.stream.Measure()
-            num_measures = len(self._get_all_chords(part))
-            m.number = num_measures + 1
-
-            # Keep adding measures until we have 100 of them
-            if num_measures >= num_chords:
-                break
+            m.number = measure_number + 1
 
             # Set the first measure's Clef, TimeSignature, and KeySignature
-            if num_measures == 0:
+            if measure_number == 0:
                 if left_hand == True:
                     m.append(music21.clef.BassClef())
                 else:
@@ -126,15 +147,10 @@ class CMChordGenerator(object):
                 m.append(key)
 
             # Generate a random chord and transpose it
-            random_chord = self.generate_chord()
+            random_chord = self.generate_chord(['4', '5'], key, notes_per_chord)
             if left_hand == True:
                 # First move it down a bunch before we move it right back up
                 random_chord = random_chord.transpose(-24)
-            random_chord = random_chord.transpose(random.choice(range(0,12))).simplifyEnharmonics(keyContext=key)
-
-            # Don't include it for now if two adjacent notes would take up the same space
-            if random_chord.hasAnyRepeatedDiatonicNote():
-                continue
 
             # Update the measure with a ChordSymbol if possible.
             # Only include ChordSymbols for the right hand at the moment.
@@ -157,58 +173,38 @@ class CMChordGenerator(object):
 
         return part
 
-    def generate_chord(self):
-        # Start off with an octave full of notes.  60 is MIDI for
-        # middle C, and 72 (not included here) is exactly one octave above
-        possible_notes = list(range(60,72))
+    @staticmethod
+    def generate_chord(octaves, key, num_notes):
+        pitch_classes = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
+        accidentals = ['', '-', '#']
+        all_pitches = [f'{pc}{acc}{octave}' for pc in pitch_classes for acc in accidentals for octave in octaves]
 
-        # Create a whole-note chord out of notes_per_chord notes from this range.
-        # We need to do it this way because there are a few restrictions:
-        # 1) Can't have more than 2 consecutive semi-tones
-        # 2) ?
-        def longest_cluster(notes):
-            if not notes:
-                return 0
+        while True:
+            chord_pitches = random.sample(all_pitches, num_notes)
+            random_chord = music21.chord.Chord(chord_pitches, quarterLength=4).sortChromaticAscending().simplifyEnharmonics(keyContext=key)
 
-            next_to_previous_note = [abs(b - a) <= 1 for (a, b) in zip(notes[:-1], notes[1:])]
-
-            if True not in next_to_previous_note:
-                return 1
-
-            return max(len(list(y)) for (c,y) in itertools.groupby(next_to_previous_note) if c==True) + 1
-            
-        random_chord = music21.chord.Chord(type="whole")
-        while len(random_chord) < self.notes_per_chord:
-            # Pick another note to add
-            note_to_add = music21.note.Note(random.choice(possible_notes))
-            # (But skip if we already added this note)
-            if note_to_add in random_chord:
+            if random_chord.hasAnyRepeatedDiatonicNote():
                 continue
 
-            # Add and re-sort
-            random_chord.add(note_to_add)
-            random_chord.sortChromaticAscending()
+            # hasAnyRepeatedDiatonicNote() doesn't actually check to see if there
+            # are identical notes.
+            if len(set(n.pitch.midi for n in random_chord)) != num_notes:
+                print(random_chord)
+                continue
+
+            chord_span = random_chord[-1].pitch.midi - random_chord[0].pitch.midi
+            if chord_span < 5 or chord_span > 12:
+                continue
 
             # Until Synthesia/MoonPiano/etc... can render better sheet music, disallow
             # too many adjacent notes
-            if longest_cluster([p.midi for p in random_chord.pitches]) > 3:
-                random_chord.remove(note_to_add)
+            if has_adjacent_notes_exceeding_max_length(random_chord, 2):
                 continue
 
-        return random_chord.simplifyEnharmonics()
+            # We've found a good chord to use!
+            break
 
-    @staticmethod
-    def invert(chord):
-        # Randomly invert.  Is there a cleaner way to do this with
-        # the music21 API?  chord inversion doesn't always work...
-        chord = copy.deepcopy(chord)
-        pitches = [None]*len(chord)
-        inversion = random.choice(range(len(chord)))
-        for i in range(len(chord)):
-            pitches[i-inversion] = chord.pitches[i]
-            if i < inversion:
-                pitches[i-inversion].transpose(music21.interval.GenericInterval(8), inPlace=True)
-        return music21.chord.Chord(pitches, type="whole").simplifyEnharmonics
+        return random_chord
 
     def _get_all_chords(self, parent):
         # ChordSymbol derives from Chord, so we need to filter out only
