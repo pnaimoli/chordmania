@@ -1,12 +1,3 @@
-import argparse
-import copy
-import itertools
-import logging
-import random
-import music21
-from music21.musicxml import m21ToXml
-import os
-
 """
 ChordMania is a module for generating random chord progressions for practice,
 using the music21 library. The generated chords can be limited by a specified
@@ -14,11 +5,15 @@ key signature, number of measures, number of notes per chord, and the option to
 include chords for both hands.
 """
 
+import argparse
+import logging
+import random
+import music21
+from music21.musicxml import m21ToXml
+
 us = music21.environment.UserSettings()
 us['musicxmlPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
 us['musescoreDirectPNGPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
-
-ALL_KEY_SIGNATURES = range(-6,7) # Every key (negatives=flats, positives=sharps)
 
 # I'm not interested in performance, I just want to eliminate duplicates
 # in one line by using a python set
@@ -52,7 +47,7 @@ def has_adjacent_notes_exceeding_max_length(chord, max_length):
     return False
 
 
-class CMFourFiveStreamGenerator(object):
+class CMFourFiveStreamGenerator():
     """
     Generates a random stream of intervals for practice using the music21 library.
     The intervals are either 4 or 5 white notes apart and are close together.
@@ -71,10 +66,10 @@ class CMFourFiveStreamGenerator(object):
 
         self.score = music21.stream.Score()
 
-        md = music21.metadata.Metadata()
-        md.title = "4/5 Stream Practice"
-        md.composer = "ChordMania"
-        self.score.append(md)
+        metadata = music21.metadata.Metadata()
+        metadata.title = "4/5 Stream Practice"
+        metadata.composer = "ChordMania"
+        self.score.append(metadata)
 
         time_signature = music21.meter.TimeSignature('4/4')
 
@@ -139,15 +134,17 @@ class CMFourFiveStreamGenerator(object):
         "musicxml.png" format and output the music21 stream representation to STDERR.
         """
 
+        # Convert the music21 stream to MusicXML format and print to STDOUT
         musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
         musicxml_str = musicxml_exporter.parse().decode('utf-8')
         print(musicxml_str)
 
-        logger.debug(self.score._reprText())
+        # Debug stuff
+        logger.debug(self.score._reprText()) # pylint: disable=protected-access
         if logger.getEffectiveLevel() <= logging.DEBUG:
             self.score.show(fmt="musicxml.png")
 
-class CMChordGenerator(object):
+class CMChordGenerator():
     """
     A class for generating random chord progressions using the music21
     library.
@@ -170,18 +167,21 @@ class CMChordGenerator(object):
 
         # Create our stream!
         self.stream = music21.stream.Stream()
-        md = music21.metadata.Metadata()
-        md.title = "Random {} Practice".format(key.name.replace("-", "b"))
-        md.composer = "ChordMania"
-        md.movementName = "{} Chords".format(num_chords)
-        self.stream.append(md)
+        metadata = music21.metadata.Metadata()
+        metadata.title = f"Random {key.name.replace('-', 'b')} Practice"
+        metadata.composer = "ChordMania"
+        metadata.movementName = f"{num_chords} Chords"
+        self.stream.append(metadata)
 
         parts = [self._generate_part(notes_per_chord, num_chords, key, False)]
         if both_hands:
             parts.append(self._generate_part(notes_per_chord, num_chords, key, True))
-            staffGroup = music21.layout.StaffGroup(parts, name='Piano', abbreviation='Pno.', symbol='brace')
-            staffGroup.barTogether = 'Mensurstrich'
-            self.stream.append(staffGroup)
+            staff_group = music21.layout.StaffGroup(parts,
+                                                    name='Piano',
+                                                    abbreviation='Pno.',
+                                                    symbol='brace')
+            staff_group.barTogether = 'Mensurstrich'
+            self.stream.append(staff_group)
 
         self.stream.append(parts)
 
@@ -192,28 +192,28 @@ class CMChordGenerator(object):
         part.append(instrument)
 
         for measure_number in range(num_chords):
-            m = music21.stream.Measure()
-            m.number = measure_number + 1
+            measure = music21.stream.Measure()
+            measure.number = measure_number + 1
 
             # Set the first measure's Clef, TimeSignature, and KeySignature
             if measure_number == 0:
-                if left_hand == True:
-                    m.append(music21.clef.BassClef())
+                if left_hand:
+                    measure.append(music21.clef.BassClef())
                 else:
-                    m.append(music21.clef.TrebleClef())
-                m.append(music21.meter.TimeSignature('4/4'))
+                    measure.append(music21.clef.TrebleClef())
+                measure.append(music21.meter.TimeSignature('4/4'))
 
-                m.append(key)
+                measure.append(key)
 
             # Generate a random chord and transpose it
             random_chord = self.generate_chord(['4', '5'], key, notes_per_chord)
-            if left_hand == True:
+            if left_hand:
                 # First move it down a bunch before we move it right back up
                 random_chord = random_chord.transpose(-24)
 
             # Update the measure with a ChordSymbol if possible.
             # Only include ChordSymbols for the right hand at the moment.
-            if left_hand == False:
+            if not left_hand:
                 cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
                 if cs_string != 'Chord Symbol Cannot Be Identified':
                     try:
@@ -222,13 +222,13 @@ class CMChordGenerator(object):
                         # "#m/aadde- is not a supported accidental type"
                         # I don't know exactly what the problem is, but let's just
                         # not annotate those chords
-                        m.append(music21.harmony.ChordSymbol(cs_string))
-                    except music21.pitch.AccidentalException as e:
+                        measure.append(music21.harmony.ChordSymbol(cs_string))
+                    except music21.pitch.AccidentalException:
                         pass
 
             # Finally add the chord to the measure, and the measure to the stream
-            m.append(random_chord)
-            part.append(m)
+            measure.append(random_chord)
+            part.append(measure)
 
         return part
 
@@ -248,11 +248,14 @@ class CMChordGenerator(object):
 
         pitch_classes = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
         accidentals = ['', '-', '#']
-        all_pitches = [f'{pc}{acc}{octave}' for pc in pitch_classes for acc in accidentals for octave in octaves]
+        all_pitches = [f'{pc}{acc}{octave}' for pc in pitch_classes
+                                            for acc in accidentals
+                                            for octave in octaves]
 
         while True:
             chord_pitches = random.sample(all_pitches, num_notes)
-            random_chord = music21.chord.Chord(chord_pitches, quarterLength=4).sortChromaticAscending().simplifyEnharmonics(keyContext=key)
+            random_chord = music21.chord.Chord(chord_pitches, quarterLength=4)
+            random_chord = random_chord.sortChromaticAscending().simplifyEnharmonics(keyContext=key)
 
             if random_chord.hasAnyRepeatedDiatonicNote():
                 continue
@@ -316,8 +319,11 @@ class CMChordGenerator(object):
         """
 
         # Finalize some metadata
-        md = self.stream.getElementsByClass(music21.metadata.Metadata).stream().next()
-        md["description"] = "{}/{} chords are unique.".format(len(self._get_unique_chords(self.stream)), len(self._get_all_chords(self.stream)))
+        metadata = self.stream.getElementsByClass(music21.metadata.Metadata).stream().next()
+        metadata["description"] = (
+                f"{len(self._get_unique_chords(self.stream))}/"
+                f"{len(self._get_all_chords(self.stream))} chords are unique."
+                )
 
         # Convert the music21 stream to MusicXML format and print to STDOUT
         musicxml_exporter = m21ToXml.GeneralObjectExporter(self.stream)
@@ -325,7 +331,7 @@ class CMChordGenerator(object):
         print(musicxml_str)
 
         # Debug stuff
-        logger.debug(self.stream._reprText())
+        logger.debug(self.stream._reprText()) # pylint: disable=protected-access
         if logger.getEffectiveLevel() <= logging.DEBUG:
             self.stream.show(fmt="musicxml.png")
 
@@ -347,8 +353,9 @@ if __name__== "__main__":
     logger.setLevel(level=args.loglevel)
 
     # Just pick a random Key if nothing is provided on the command line
+    all_keys = range(-6, 7)  # Every key (negatives=flats, positives=sharps)
     if not args.key:
-        args.key = music21.key.KeySignature(random.choice(ALL_KEY_SIGNATURES)).asKey()
+        args.key = music21.key.KeySignature(random.choice(all_keys)).asKey()
 
 #    cg = CMChordGenerator(args.notes, args.measures, key=args.key, both_hands=args.both_hands)
     cg = CMFourFiveStreamGenerator(args.measures)
