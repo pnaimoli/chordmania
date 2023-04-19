@@ -7,6 +7,13 @@ import music21
 from music21.musicxml import m21ToXml
 import os
 
+"""
+ChordMania is a module for generating random chord progressions for practice,
+using the music21 library. The generated chords can be limited by a specified
+key signature, number of measures, number of notes per chord, and the option to
+include chords for both hands.
+"""
+
 us = music21.environment.UserSettings()
 us['musicxmlPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
 us['musescoreDirectPNGPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
@@ -46,7 +53,22 @@ def has_adjacent_notes_exceeding_max_length(chord, max_length):
 
 
 class CMFourFiveStreamGenerator(object):
+    """
+    Generates a random stream of intervals for practice using the music21 library.
+    The intervals are either 4 or 5 white notes apart and are close together.
+
+    Attributes:
+        score (music21.stream.Score): The music21 score containing the generated music.
+    """
+
     def __init__(self, num_measures):
+        """
+        Initialize the CMFourFiveStreamGenerator with the specified number of measures.
+
+        Args:
+            num_measures (int): The number of measures in the generated stream.
+        """
+
         self.score = music21.stream.Score()
 
         md = music21.metadata.Metadata()
@@ -86,6 +108,19 @@ class CMFourFiveStreamGenerator(object):
 
     @staticmethod
     def get_white_notes_between(start, end):
+        """
+        Get all white notes (notes without accidentals) between the given start
+        and end notes.
+
+        Args:
+            start (str): The starting note, as a string (e.g., 'C4').
+            end (str): The ending note, as a string (e.g., 'C6').
+
+        Returns:
+            list: A list of music21.note.Note objects representing the white
+            notes between the start and end notes.
+        """
+
         white_notes = []
         current = music21.note.Note(start)
         while current <= music21.note.Note(end):
@@ -95,19 +130,43 @@ class CMFourFiveStreamGenerator(object):
         return white_notes
 
     def render(self):
-        # Convert the music21 stream to MusicXML format and print to STDOUT
+        """
+        Render the score as MusicXML, and print the output to STDOUT.
+
+        This method converts the music21 stream (self.score) to MusicXML format and
+        prints the output to STDOUT.  If the logger's effective level is set to
+        logging.DEBUG, it will also display the score as an image using the
+        "musicxml.png" format and output the music21 stream representation to STDERR.
+        """
+
         musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
         musicxml_str = musicxml_exporter.parse().decode('utf-8')
         print(musicxml_str)
 
-        # Debug stuff
         logger.debug(self.score._reprText())
         if logger.getEffectiveLevel() <= logging.DEBUG:
             self.score.show(fmt="musicxml.png")
 
 class CMChordGenerator(object):
+    """
+    A class for generating random chord progressions using the music21
+    library.
+
+    Attributes:
+        stream (music21.stream.Stream): The music21 stream containing the
+        generated chords.
+    """
+
     def __init__(self, notes_per_chord, num_chords, key, both_hands):
-        self.notes_per_chord = notes_per_chord
+        """
+        Initialize the CMChordGenerator with the specified parameters.
+
+        Args:
+            notes_per_chord (int): The number of notes per chord.
+            num_chords (int): The number of chords to generate.
+            key (music21.key.Key): The key signature for the chords.
+            both_hands (bool): Whether to generate chords for both hands.
+        """
 
         # Create our stream!
         self.stream = music21.stream.Stream()
@@ -175,6 +234,18 @@ class CMChordGenerator(object):
 
     @staticmethod
     def generate_chord(octaves, key, num_notes):
+        """
+        Generate a random chord with the given number of notes within the specified octaves and key.
+
+        Args:
+            octaves (list): A list of octave numbers in which the chord's notes should be selected.
+            key (music21.key.Key): The key signature for the generated chord.
+            num_notes (int): The number of notes in the chord.
+
+        Returns:
+            music21.chord.Chord: A randomly generated chord satisfying the given conditions.
+        """
+
         pitch_classes = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
         accidentals = ['', '-', '#']
         all_pitches = [f'{pc}{acc}{octave}' for pc in pitch_classes for acc in accidentals for octave in octaves]
@@ -189,7 +260,6 @@ class CMChordGenerator(object):
             # hasAnyRepeatedDiatonicNote() doesn't actually check to see if there
             # are identical notes.
             if len(set(n.pitch.midi for n in random_chord)) != num_notes:
-                print(random_chord)
                 continue
 
             chord_span = random_chord[-1].pitch.midi - random_chord[0].pitch.midi
@@ -207,15 +277,44 @@ class CMChordGenerator(object):
         return random_chord
 
     def _get_all_chords(self, parent):
+        """
+        Get all chords contained within the given parent music21 object.
+
+        Args:
+            parent (music21.base.Music21Object): A music21 object containing chords.
+
+        Returns:
+            list: A list of music21.chord.Chord objects found within the parent object.
+        """
+
         # ChordSymbol derives from Chord, so we need to filter out only
         # the Chords since getElementsByClass will return both.
         return [e for e in parent.recurse().getElementsByClass(music21.chord.Chord)
                 if e.__class__ is music21.chord.Chord]
 
     def _get_unique_chords(self, parent):
+        """
+        Get all unique chords contained within the given parent music21 object.
+
+        Args:
+            parent (music21.base.Music21Object): A music21 object containing chords.
+
+        Returns:
+            set: A set of unique music21.chord.Chord objects found within the parent object.
+        """
+
         return set(self._get_all_chords(parent))
 
     def render(self):
+        """
+        Render the score as MusicXML, and print the output to STDOUT.
+
+        This method converts the music21 stream (self.score) to MusicXML format and
+        prints the output to STDOUT.  If the logger's effective level is set to
+        logging.DEBUG, it will also display the score as an image using the
+        "musicxml.png" format and output the music21 stream representation to STDERR.
+        """
+
         # Finalize some metadata
         md = self.stream.getElementsByClass(music21.metadata.Metadata).stream().next()
         md["description"] = "{}/{} chords are unique.".format(len(self._get_unique_chords(self.stream)), len(self._get_all_chords(self.stream)))
