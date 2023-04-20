@@ -94,6 +94,54 @@ class CMMusicGenerator:
         if logger.getEffectiveLevel() <= logging.DEBUG:
             self.score.show(fmt="musicxml.png")
 
+
+class CMStreamGenerator(CMMusicGenerator):
+    def __init__(self, num_measures):
+        super().__init__()
+
+        metadata = music21.metadata.Metadata()
+        metadata.title = "16ths Stream Practice"
+        metadata.composer = "ChordMania"
+        self.score.append(metadata)
+
+        # Define a list of white key pitches within the specified range (C4 to G6)
+        white_keys = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
+        pitches_in_range = [f'{p}{octave}' for octave in range(4, 7) for p in white_keys]
+        pitches_in_range = [p for p in pitches_in_range if music21.pitch.Pitch(p) >= music21.pitch.Pitch('C4') and music21.pitch.Pitch(p) <= music21.pitch.Pitch('C6')]
+
+        # Create the score and part
+        part = music21.stream.Part()
+        part.insert(0, music21.clef.TrebleClef())
+        part.insert(0, music21.meter.TimeSignature('4/4'))
+
+        # Generate the random notes and add them to the part
+        prev_pitch_idx = random.randint(0, len(pitches_in_range) - 1)
+        for measure_idx in range(num_measures):
+            measure = music21.stream.Measure(number=measure_idx + 1)
+            for _ in range(16):
+                lowest_jump = max(-prev_pitch_idx, -2)
+                highest_jump = min(len(pitches_in_range) - prev_pitch_idx - 1, 2)
+                offset = random.randint(lowest_jump, highest_jump)
+                next_pitch_idx = (prev_pitch_idx + offset) % len(pitches_in_range)
+                note = music21.note.Note(pitches_in_range[next_pitch_idx])
+                note.duration.quarterLength = 0.25
+                note.stemDirection = 'up'
+
+                if _ % 4 == 0:
+                    note.beams.append('start')
+                elif _ % 4 == 3:
+                    note.beams.append('stop')
+                else:
+                    note.beams.append('continue')
+
+                measure.append(note)
+                prev_pitch_idx = next_pitch_idx
+            part.append(measure)
+
+        # Add the part to the score
+        self.score.insert(0, part)
+
+
 class CMFourFiveStreamGenerator(CMMusicGenerator):
     """
     Generates a random stream of intervals for practice using the music21 library.
