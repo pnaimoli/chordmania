@@ -21,6 +21,20 @@ music21.chord.Chord.__hash__ = lambda self: 0
 
 logger = logging.getLogger("ChordMania")
 
+def set_accidental_display_type_if_absolutely_necessary(chord):
+    """
+    Set each note's Accidental.displayType to "if-absolutely-necessary" in a given chord.
+
+    Args:
+        chord (music21.chord.Chord): The music21 chord object to modify.
+    """
+    # Iterate through all notes in the chord
+    for note in chord.notes:
+        # Check if the note has an accidental
+        if note.pitch.accidental:
+            # Set the accidental's displayType to "if-absolutely-necessary"
+            note.pitch.accidental.displayType = "if-absolutely-necessary"
+
 def has_adjacent_notes_exceeding_max_length(chord, max_length):
     """
     Check if a music21 chord has more than `max_length` adjacent notes.
@@ -246,6 +260,7 @@ class CMChordGenerator():
             music21.chord.Chord: A randomly generated chord satisfying the given conditions.
         """
 
+        # We do it like this so that sharps and flats occur equally likely
         pitch_classes = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
         accidentals = ['', '-', '#']
         all_pitches = [f'{pc}{acc}{octave}' for pc in pitch_classes
@@ -255,7 +270,8 @@ class CMChordGenerator():
         while True:
             chord_pitches = random.sample(all_pitches, num_notes)
             random_chord = music21.chord.Chord(chord_pitches, quarterLength=4)
-            random_chord = random_chord.sortChromaticAscending().simplifyEnharmonics(keyContext=key)
+            random_chord = random_chord.sortChromaticAscending()
+#            random_chord = random_chord.simplifyEnharmonics(keyContext=key)
 
             if random_chord.hasAnyRepeatedDiatonicNote():
                 continue
@@ -276,6 +292,8 @@ class CMChordGenerator():
 
             # We've found a good chord to use!
             break
+
+        set_accidental_display_type_if_absolutely_necessary(random_chord)
 
         return random_chord
 
@@ -357,6 +375,6 @@ if __name__== "__main__":
     if not args.key:
         args.key = music21.key.KeySignature(random.choice(all_keys)).asKey()
 
-#    cg = CMChordGenerator(args.notes, args.measures, key=args.key, both_hands=args.both_hands)
-    cg = CMFourFiveStreamGenerator(args.measures)
+    cg = CMChordGenerator(args.notes, args.measures, key=args.key, both_hands=args.both_hands)
+#    cg = CMFourFiveStreamGenerator(args.measures)
     cg.render()
