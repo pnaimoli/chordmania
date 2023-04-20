@@ -60,8 +60,41 @@ def has_adjacent_notes_exceeding_max_length(chord, max_length):
 
     return False
 
+class CMMusicGenerator:
+    """
+    Base class for ChordMania music generators.
 
-class CMFourFiveStreamGenerator():
+    This class provides common properties and methods for generating music
+    using music21 library.
+
+    Attributes:
+        score (music21.stream.Score): The generated score.
+    """
+
+    def __init__(self):
+        self.score = music21.stream.Score()
+
+    def output_score(self):
+        """
+        Converts the score as MusicXML, and print the output to STDOUT.
+
+        This method converts the music21 stream (self.score) to MusicXML format and
+        prints the output to STDOUT.  If the logger's effective level is set to
+        logging.DEBUG, it will also display the score as an image using the
+        "musicxml.png" format and output the music21 stream representation to STDERR.
+        """
+
+        # Convert the music21 stream to MusicXML format and print to STDOUT
+        musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
+        musicxml_str = musicxml_exporter.parse().decode('utf-8')
+        print(musicxml_str)
+
+        # Debug stuff
+        logger.debug(self.score._reprText()) # pylint: disable=protected-access
+        if logger.getEffectiveLevel() <= logging.DEBUG:
+            self.score.show(fmt="musicxml.png")
+
+class CMFourFiveStreamGenerator(CMMusicGenerator):
     """
     Generates a random stream of intervals for practice using the music21 library.
     The intervals are either 4 or 5 white notes apart and are close together.
@@ -78,7 +111,7 @@ class CMFourFiveStreamGenerator():
             num_measures (int): The number of measures in the generated stream.
         """
 
-        self.score = music21.stream.Score()
+        super().__init__()
 
         metadata = music21.metadata.Metadata()
         metadata.title = "4/5 Stream Practice"
@@ -138,27 +171,8 @@ class CMFourFiveStreamGenerator():
             current = music21.note.Note(current.pitch).transpose(1)
         return white_notes
 
-    def render(self):
-        """
-        Render the score as MusicXML, and print the output to STDOUT.
 
-        This method converts the music21 stream (self.score) to MusicXML format and
-        prints the output to STDOUT.  If the logger's effective level is set to
-        logging.DEBUG, it will also display the score as an image using the
-        "musicxml.png" format and output the music21 stream representation to STDERR.
-        """
-
-        # Convert the music21 stream to MusicXML format and print to STDOUT
-        musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
-        musicxml_str = musicxml_exporter.parse().decode('utf-8')
-        print(musicxml_str)
-
-        # Debug stuff
-        logger.debug(self.score._reprText()) # pylint: disable=protected-access
-        if logger.getEffectiveLevel() <= logging.DEBUG:
-            self.score.show(fmt="musicxml.png")
-
-class CMChordGenerator():
+class CMChordGenerator(CMMusicGenerator):
     """
     A class for generating random chord progressions using the music21
     library.
@@ -179,13 +193,13 @@ class CMChordGenerator():
             both_hands (bool): Whether to generate chords for both hands.
         """
 
-        # Create our stream!
-        self.stream = music21.stream.Stream()
+        super().__init__()
+
         metadata = music21.metadata.Metadata()
         metadata.title = f"Random {key.name.replace('-', 'b')} Practice"
         metadata.composer = "ChordMania"
         metadata.movementName = f"{num_chords} Chords"
-        self.stream.append(metadata)
+        self.score.append(metadata)
 
         parts = [self._generate_part(notes_per_chord, num_chords, key, False)]
         if both_hands:
@@ -195,9 +209,16 @@ class CMChordGenerator():
                                                     abbreviation='Pno.',
                                                     symbol='brace')
             staff_group.barTogether = 'Mensurstrich'
-            self.stream.append(staff_group)
+            self.score.append(staff_group)
 
-        self.stream.append(parts)
+        self.score.append(parts)
+
+        # Finalize some metadata
+        metadata = self.score.getElementsByClass(music21.metadata.Metadata).stream().next()
+        metadata["description"] = (
+                f"{len(self._get_unique_chords(self.score))}/"
+                f"{len(self._get_all_chords(self.score))} chords are unique."
+                )
 
     def _generate_part(self, notes_per_chord, num_chords, key, left_hand):
         part = music21.stream.PartStaff()
@@ -336,22 +357,15 @@ class CMChordGenerator():
         "musicxml.png" format and output the music21 stream representation to STDERR.
         """
 
-        # Finalize some metadata
-        metadata = self.stream.getElementsByClass(music21.metadata.Metadata).stream().next()
-        metadata["description"] = (
-                f"{len(self._get_unique_chords(self.stream))}/"
-                f"{len(self._get_all_chords(self.stream))} chords are unique."
-                )
-
         # Convert the music21 stream to MusicXML format and print to STDOUT
-        musicxml_exporter = m21ToXml.GeneralObjectExporter(self.stream)
+        musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
         musicxml_str = musicxml_exporter.parse().decode('utf-8')
         print(musicxml_str)
 
         # Debug stuff
-        logger.debug(self.stream._reprText()) # pylint: disable=protected-access
+        logger.debug(self.score._reprText()) # pylint: disable=protected-access
         if logger.getEffectiveLevel() <= logging.DEBUG:
-            self.stream.show(fmt="musicxml.png")
+            self.score.show(fmt="musicxml.png")
 
 if __name__== "__main__":
     parser = argparse.ArgumentParser(
@@ -377,4 +391,4 @@ if __name__== "__main__":
 
     cg = CMChordGenerator(args.notes, args.measures, key=args.key, both_hands=args.both_hands)
 #    cg = CMFourFiveStreamGenerator(args.measures)
-    cg.render()
+    cg.output_score()
