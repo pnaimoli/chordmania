@@ -11,6 +11,10 @@ import random
 import music21
 from music21.musicxml import m21ToXml
 
+# For some reason Synthesia really doesn't like the weird
+# defaultDuration = 10080 that music21 does.
+music21.defaults.divisionsPerQuarter = 4
+
 us = music21.environment.UserSettings()
 us['musicxmlPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
 us['musescoreDirectPNGPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
@@ -96,6 +100,21 @@ class CMMusicGenerator:
 
 
 class CMStreamGenerator(CMMusicGenerator):
+    """
+    CMStreamGenerator is a class derived from the CMMusicGenerator base class. It
+    generates a music21 Score object containing random 16th notes selected from
+    white keys between C4 and G6. The score is in 4/4 time signature and has a
+    single treble clef part. The generated notes follow these constraints:
+    - Consecutive notes are no more than 2 white keys apart.
+    - Every 4 notes are connected by a beam placed above the notes.
+
+    The score can have a user-specified number of measures.
+
+    Example usage:
+        cm_stream_generator = CMStreamGenerator(num_measures=10)
+        score = cm_stream_generator.get_score()
+    """
+
     def __init__(self, num_measures):
         super().__init__()
 
@@ -107,7 +126,9 @@ class CMStreamGenerator(CMMusicGenerator):
         # Define a list of white key pitches within the specified range (C4 to G6)
         white_keys = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
         pitches_in_range = [f'{p}{octave}' for octave in range(4, 7) for p in white_keys]
-        pitches_in_range = [p for p in pitches_in_range if music21.pitch.Pitch(p) >= music21.pitch.Pitch('C4') and music21.pitch.Pitch(p) <= music21.pitch.Pitch('C6')]
+        pitches_in_range = [p for p in pitches_in_range if
+                            (music21.pitch.Pitch(p) >= music21.pitch.Pitch('C4') and
+                            music21.pitch.Pitch(p) <= music21.pitch.Pitch('C6'))]
 
         # Create the score and part
         part = music21.stream.Part()
@@ -139,7 +160,7 @@ class CMStreamGenerator(CMMusicGenerator):
             part.append(measure)
 
         # Add the part to the score
-        self.score.insert(0, part)
+        self.score.append(part)
 
 
 class CMFourFiveStreamGenerator(CMMusicGenerator):
@@ -395,25 +416,6 @@ class CMChordGenerator(CMMusicGenerator):
 
         return set(self._get_all_chords(parent))
 
-    def render(self):
-        """
-        Render the score as MusicXML, and print the output to STDOUT.
-
-        This method converts the music21 stream (self.score) to MusicXML format and
-        prints the output to STDOUT.  If the logger's effective level is set to
-        logging.DEBUG, it will also display the score as an image using the
-        "musicxml.png" format and output the music21 stream representation to STDERR.
-        """
-
-        # Convert the music21 stream to MusicXML format and print to STDOUT
-        musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
-        musicxml_str = musicxml_exporter.parse().decode('utf-8')
-        print(musicxml_str)
-
-        # Debug stuff
-        logger.debug(self.score._reprText()) # pylint: disable=protected-access
-        if logger.getEffectiveLevel() <= logging.DEBUG:
-            self.score.show(fmt="musicxml.png")
 
 if __name__== "__main__":
     parser = argparse.ArgumentParser(
