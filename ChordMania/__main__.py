@@ -124,6 +124,36 @@ class CMMusicGenerator:
     def __init__(self):
         self.score = music21.stream.Score()
 
+    @staticmethod
+    def _get_all_chords(parent):
+        """
+        Get all chords contained within the given parent music21 object.
+
+        Args:
+            parent (music21.base.Music21Object): A music21 object containing chords.
+
+        Returns:
+            list: A list of music21.chord.Chord objects found within the parent object.
+        """
+
+        # ChordSymbol derives from Chord, so we need to filter out only
+        # the Chords since getElementsByClass will return both.
+        return [e for e in parent.recurse().getElementsByClass(music21.chord.Chord)
+                if e.__class__ is music21.chord.Chord]
+
+    def _get_unique_chords(self, parent):
+        """
+        Get all unique chords contained within the given parent music21 object.
+
+        Args:
+            parent (music21.base.Music21Object): A music21 object containing chords.
+
+        Returns:
+            set: A set of unique music21.chord.Chord objects found within the parent object.
+        """
+
+        return set(self._get_all_chords(parent))
+
     def output_score(self):
         """
         Converts the score as MusicXML, and print the output to STDOUT.
@@ -447,35 +477,6 @@ class CMChordGenerator(CMMusicGenerator):
         set_accidental_display_type_if_absolutely_necessary(random_chord)
 
         return random_chord
-
-    def _get_all_chords(self, parent):
-        """
-        Get all chords contained within the given parent music21 object.
-
-        Args:
-            parent (music21.base.Music21Object): A music21 object containing chords.
-
-        Returns:
-            list: A list of music21.chord.Chord objects found within the parent object.
-        """
-
-        # ChordSymbol derives from Chord, so we need to filter out only
-        # the Chords since getElementsByClass will return both.
-        return [e for e in parent.recurse().getElementsByClass(music21.chord.Chord)
-                if e.__class__ is music21.chord.Chord]
-
-    def _get_unique_chords(self, parent):
-        """
-        Get all unique chords contained within the given parent music21 object.
-
-        Args:
-            parent (music21.base.Music21Object): A music21 object containing chords.
-
-        Returns:
-            set: A set of unique music21.chord.Chord objects found within the parent object.
-        """
-
-        return set(self._get_all_chords(parent))
 
 
 if __name__== "__main__":
