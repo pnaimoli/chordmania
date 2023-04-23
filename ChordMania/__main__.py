@@ -16,14 +16,42 @@ from music21.musicxml import m21ToXml
 music21.defaults.divisionsPerQuarter = 4
 
 us = music21.environment.UserSettings()
-us['musicxmlPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
-us['musescoreDirectPNGPath'] = "~/Applications/MuseScore 3.app/Contents/MacOS/mscore"
+us['musicxmlPath'] = "/usr/local/bin/mscore"
+us['musescoreDirectPNGPath'] = "/usr/local/bin/mscore"
 
 # I'm not interested in performance, I just want to eliminate duplicates
 # in one line by using a python set
 music21.chord.Chord.__hash__ = lambda self: 0
 
 logger = logging.getLogger("ChordMania")
+
+def is_same_chromatically_and_diatonically(chord):
+    """
+    Check if a given chord is the same when sorted chromatically and diatonically.
+
+    This function is useful because standard sheet music typically avoids using chords
+    that are difficult to read, which include chords that have a different order when
+    sorted chromatically and diatonically. By using this function, you can ensure that
+    the chords you work with are easier to read and understand in a musical context.
+
+    Args:
+        chord (music21.chord.Chord): The chord to check for equality between
+            chromatic and diatonic sorting.
+
+    Returns:
+        bool: True if the chord is the same when sorted chromatically and diatonically,
+            False otherwise.
+    """
+    chromatic_sorted = chord.sortChromaticAscending()
+    diatonic_sorted = chord.sortDiatonicAscending()
+
+    if len(chromatic_sorted) != len(diatonic_sorted):
+        return False
+
+    for note1, note2 in zip(chromatic_sorted, diatonic_sorted):
+        if note1.nameWithOctave != note2.nameWithOctave:
+            return False
+    return True
 
 def set_accidental_display_type_if_absolutely_necessary(chord):
     """
@@ -317,16 +345,19 @@ class CMChordGenerator(CMMusicGenerator):
 
             # Update the measure with a ChordSymbol if possible.
             # Only include ChordSymbols for the right hand at the moment.
-            if not left_hand:
+            # TODO: I can't get this to work anymore
+            if False and not left_hand:
                 cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
                 if cs_string != 'Chord Symbol Cannot Be Identified':
                     try:
+                        chord_symbol = music21.harmony.ChordSymbol(cs_string)
+
                         # Sometimes you get a weird exception like:
                         # "-poweradda is not a supported accidental type" or
                         # "#m/aadde- is not a supported accidental type"
                         # I don't know exactly what the problem is, but let's just
                         # not annotate those chords
-                        measure.append(music21.harmony.ChordSymbol(cs_string))
+                        measure.insert(0, chord_symbol)
                     except music21.pitch.AccidentalException:
                         pass
 
@@ -363,7 +394,14 @@ class CMChordGenerator(CMMusicGenerator):
             random_chord = random_chord.sortChromaticAscending()
 #            random_chord = random_chord.simplifyEnharmonics(keyContext=key)
 
+            # It's just hard to read chords that have multiple repeated
+            # diatonic notes.
             if random_chord.hasAnyRepeatedDiatonicNote():
+                continue
+
+            # It's SUPER hard to read a chord that isn't the same sorted
+            # chromatically vs diatonically.
+            if not is_same_chromatically_and_diatonically(random_chord):
                 continue
 
             # hasAnyRepeatedDiatonicNote() doesn't actually check to see if there
@@ -372,7 +410,7 @@ class CMChordGenerator(CMMusicGenerator):
                 continue
 
             chord_span = random_chord[-1].pitch.midi - random_chord[0].pitch.midi
-            if chord_span < 5 or chord_span > 12:
+            if chord_span < 5 or chord_span > 10:
                 continue
 
             # Until Synthesia/MoonPiano/etc... can render better sheet music, disallow
@@ -441,4 +479,5 @@ if __name__== "__main__":
 
     cg = CMChordGenerator(args.notes, args.measures, key=args.key, both_hands=args.both_hands)
 #    cg = CMFourFiveStreamGenerator(args.measures)
+#    cg = CMStreamGenerator(args.measures)
     cg.output_score()
