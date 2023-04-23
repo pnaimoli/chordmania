@@ -25,6 +25,24 @@ music21.chord.Chord.__hash__ = lambda self: 0
 
 logger = logging.getLogger("ChordMania")
 
+def contains_enharmonic_equivalent_naturals(chord):
+    """
+    Checks if the given chord contains any of the four notes that are
+    enharmonic equivalents to natural notes (E#, B#, Fb, Cb).
+
+    Parameters:
+    chord (music21.chord.Chord): A chord object.
+
+    Returns:
+    bool: True if the chord contains any of the specified enharmonic equivalent
+          notes, False otherwise.
+    """
+    enharmonic_equivalent_naturals = ['E#', 'B#', 'F-', 'C-']
+    for note in chord.notes:
+        if note.name in enharmonic_equivalent_naturals:
+            return True
+    return False
+
 def is_same_chromatically_and_diatonically(chord):
     """
     Check if a given chord is the same when sorted chromatically and diatonically.
@@ -393,6 +411,11 @@ class CMChordGenerator(CMMusicGenerator):
             random_chord = music21.chord.Chord(chord_pitches, quarterLength=4)
             random_chord = random_chord.sortChromaticAscending()
 #            random_chord = random_chord.simplifyEnharmonics(keyContext=key)
+
+            # Don't include "weird" notes like (E#, B#, Fb, Cb) for now.
+            # Remove this line to increase difficulty.
+            if contains_enharmonic_equivalent_naturals(random_chord):
+                continue
 
             # It's just hard to read chords that have multiple repeated
             # diatonic notes.
