@@ -16,8 +16,10 @@ from music21.musicxml import m21ToXml
 music21.defaults.divisionsPerQuarter = 4
 
 us = music21.environment.UserSettings()
-us['musicxmlPath'] = "/usr/local/bin/mscore"
-us['musescoreDirectPNGPath'] = "/usr/local/bin/mscore"
+#us['musicxmlPath'] = "/usr/local/bin/mscore"
+#us['musescoreDirectPNGPath'] = "/usr/local/bin/mscore"
+us['musicxmlPath'] = "/Users/peter/Applications/MuseScore 4.app"
+us['musescoreDirectPNGPath'] = "/Users/peter/Applications/MuseScore 4.app"
 
 # I'm not interested in performance, I just want to eliminate duplicates
 # in one line by using a python set
