@@ -9,23 +9,10 @@ app = Flask(__name__, static_folder='client')
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    return '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>ChordMania</title>
-    </head>
-    <body>
-        <h1>Welcome to ChordMania</h1>
-        <p>This page is under construction.
-        Check out <a href="./xmlgen?notes=4&measures=3">XMLGen</a>.</p>
-    </body>
-    </html>
-    '''
-#    if path != "" and os.path.exists(app.static_folder + '/' + path):
-#        return send_from_directory(app.static_folder, path)
-#    else:
-#        return send_from_directory(app.static_folder, 'index.html')
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/xmlgen', methods=['GET'])
 @app.route('/xmlgen')
