@@ -156,6 +156,12 @@ class CMMusicGenerator:
 
         return set(self._get_all_chords(parent))
 
+    def get_xml(self):
+        # Convert the music21 stream to MusicXML format and print to STDOUT
+        musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
+        musicxml_str = musicxml_exporter.parse().decode('utf-8')
+        return musicxml_str
+
     def output_score(self):
         """
         Converts the score as MusicXML, and print the output to STDOUT.
@@ -165,10 +171,7 @@ class CMMusicGenerator:
         logging.DEBUG, it will also display the score as an image using the
         "musicxml.png" format and output the music21 stream representation to STDERR.
         """
-
-        # Convert the music21 stream to MusicXML format and print to STDOUT
-        musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
-        musicxml_str = musicxml_exporter.parse().decode('utf-8')
+        musicxml_str = self.get_xml()
         print(musicxml_str)
 
         # Debug stuff
