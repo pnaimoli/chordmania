@@ -1,4 +1,8 @@
-from . import (CMChordGenerator, )
+import argparse
+import music21
+import logging
+import random
+from . import (CMChordGenerator, logger)
 
 if __name__== "__main__":
     parser = argparse.ArgumentParser(
