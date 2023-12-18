@@ -157,6 +157,9 @@ class CMMusicGenerator:
         return set(self._get_all_chords(parent))
 
     def get_xml(self):
+        """
+        Converts the score as MusicXML, and returns the result as a string.
+        """
         # Convert the music21 stream to MusicXML format and print to STDOUT
         musicxml_exporter = m21ToXml.GeneralObjectExporter(self.score)
         musicxml_str = musicxml_exporter.parse().decode('utf-8')
@@ -371,6 +374,19 @@ class CMChordGenerator(CMMusicGenerator):
                 )
 
     def _generate_part(self, notes_per_chord, num_chords, key, left_hand):
+        """
+        Generate a part of the score with the specified parameters.
+
+        Args:
+            notes_per_chord (int): The number of notes per chord.
+            num_chords (int): The number of chords to generate.
+            key (music21.key.Key): The key signature for the chords.
+            left_hand (bool): Whether to generate chords for the left hand.
+                              If `false`, generate for the right hand.
+
+        Returns:
+            music21.stream.PartStaff: A PartStaff object with the generated chords.
+        """
         part = music21.stream.PartStaff()
         instrument = music21.instrument.Piano()
         instrument.partName = "Piano"
@@ -391,28 +407,28 @@ class CMChordGenerator(CMMusicGenerator):
                 measure.append(key)
 
             # Generate a random chord and transpose it
-            random_chord = self.generate_chord(['4', '5'], key, notes_per_chord)
+            random_chord = self.generate_chord(['4', '5'], notes_per_chord)
             if left_hand:
                 # First move it down a bunch before we move it right back up
                 random_chord = random_chord.transpose(-24)
 
-            # Update the measure with a ChordSymbol if possible.
-            # Only include ChordSymbols for the right hand at the moment.
-            # TODO: I can't get this to work anymore
-            if False and not left_hand:
-                cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
-                if cs_string != 'Chord Symbol Cannot Be Identified':
-                    try:
-                        chord_symbol = music21.harmony.ChordSymbol(cs_string)
-
-                        # Sometimes you get a weird exception like:
-                        # "-poweradda is not a supported accidental type" or
-                        # "#m/aadde- is not a supported accidental type"
-                        # I don't know exactly what the problem is, but let's just
-                        # not annotate those chords
-                        measure.insert(0, chord_symbol)
-                    except music21.pitch.AccidentalException:
-                        pass
+#            # Update the measure with a ChordSymbol if possible.
+#            # Only include ChordSymbols for the right hand at the moment.
+#            # TODO: I can't get this to work anymore
+#            if not left_hand:
+#                cs_string = music21.harmony.chordSymbolFigureFromChord(random_chord)
+#                if cs_string != 'Chord Symbol Cannot Be Identified':
+#                    try:
+#                        chord_symbol = music21.harmony.ChordSymbol(cs_string)
+#
+#                        # Sometimes you get a weird exception like:
+#                        # "-poweradda is not a supported accidental type" or
+#                        # "#m/aadde- is not a supported accidental type"
+#                        # I don't know exactly what the problem is, but let's just
+#                        # not annotate those chords
+#                        measure.insert(0, chord_symbol)
+#                    except music21.pitch.AccidentalException:
+#                        pass
 
             # Finally add the chord to the measure, and the measure to the stream
             measure.append(random_chord)
@@ -421,7 +437,7 @@ class CMChordGenerator(CMMusicGenerator):
         return part
 
     @staticmethod
-    def generate_chord(octaves, key, num_notes):
+    def generate_chord(octaves, num_notes):
         """
         Generate a random chord with the given number of notes within the specified octaves and key.
 

@@ -1,7 +1,14 @@
+"""
+This module is the main entry point for the ChordMania application.
+
+It handles command-line arguments to customize the generation of chord
+progressions and outputs the resulting music as a score.
+"""
+
 import argparse
-import music21
 import logging
 import random
+import music21
 from . import (CMChordGenerator, logger)
 
 if __name__== "__main__":
