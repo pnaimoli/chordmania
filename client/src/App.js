@@ -67,9 +67,9 @@ export default function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ display: 'flex' }}>
+      <Box>
         <CssBaseline />
-        <AppBar position="fixed">
+        <AppBar>
           <Toolbar>
             <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
             <Typography
@@ -158,7 +158,8 @@ export default function App() {
             </Button>
           </Toolbar>
         </AppBar>
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <Box component="main" sx={{ flexGrow: 1, p: 0 }}>
+          <Toolbar />
           <Typography paragraph>{xmlData}</Typography>
         </Box>
       </Box>
