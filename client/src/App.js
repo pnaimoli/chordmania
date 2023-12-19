@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { AppBar, Box, CssBaseline, Toolbar, Typography, IconButton, List, ListItem, Divider, TextField, MenuItem, Button } from '@mui/material';
-import AdbIcon from '@mui/icons-material/Adb';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { AppBar, Box, CssBaseline, Toolbar, Typography, TextField, Button } from '@mui/material';
+
+import {ReactComponent as CMLogo} from './logo.svg';
 
 const theme = createTheme({
   palette: {
@@ -20,7 +19,64 @@ const theme = createTheme({
       default: '#fff',
     },
   },
+  components: {
+    // Override styles for the Outlined Input
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          // Style overrides here
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#000', // Your desired color for the border
+          },
+        },
+      },
+    },
+    // Override styles for the Input Label
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          // Style overrides here
+          '&.Mui-focused': {
+            color: '#000',
+          },
+        },
+      },
+    },
+  },
 });
+
+const keySignatures = [
+  { value: "A", label: "A" },
+  { value: "A-", label: "Ab" },
+  { value: "B", label: "B" },
+  { value: "B-", label: "Bb" },
+  { value: "C", label: "C" },
+  { value: "C#", label: "C#" },
+  { value: "C-", label: "Cb" },
+  { value: "D", label: "D" },
+  { value: "D-", label: "Db" },
+  { value: "E", label: "E" },
+  { value: "E-", label: "Eb" },
+  { value: "F", label: "F" },
+  { value: "F#", label: "F#" },
+  { value: "G", label: "G" },
+  { value: "G-", label: "Gb" },
+  { value: "a", label: "Am" },
+  { value: "a-", label: "Abm" },
+  { value: "b", label: "Bm" },
+  { value: "b-", label: "Bbm" },
+  { value: "c", label: "Cm" },
+  { value: "c#", label: "C#m" },
+  { value: "c-", label: "Cbm" },
+  { value: "d", label: "Dm" },
+  { value: "d-", label: "Dbm" },
+  { value: "e", label: "Em" },
+  { value: "e-", label: "Ebm" },
+  { value: "f", label: "Fm" },
+  { value: "f#", label: "F#m" },
+  { value: "g", label: "Gm" },
+  { value: "g-", label: "Gbm" }
+];
 
 export default function App() {
   const [notes, setNotes] = useState(4);
@@ -71,14 +127,16 @@ export default function App() {
         <CssBaseline />
         <AppBar>
           <Toolbar>
-            <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
+            <CMLogo
+               height='auto'
+               width='50'
+            />
             <Typography
               variant="h6"
               noWrap
-              component="a"
-              href="#app-bar-with-responsive-menu"
               sx={{
                 mr: 2,
+                ml: 2,
                 display: { xs: 'none', md: 'flex' },
                 fontFamily: 'monospace',
                 fontWeight: 700,
@@ -87,7 +145,7 @@ export default function App() {
                 textDecoration: 'none',
               }}
             >
-              LOGO
+              ChordMania
             </Typography>
             <TextField
               label="Notes"
@@ -106,6 +164,7 @@ export default function App() {
               size="small"
               value={measures}
               onChange={handleMeasuresChange}
+              InputLabelProps={{ shrink: true, }}
             />
             <TextField
               select
@@ -114,39 +173,13 @@ export default function App() {
               onChange={(e) => setKey(e.target.value)}
               sx={{ mx: 2, my: 1, width: 100 }}
               size="small"
-              SelectProps={{ native: false }}
+              SelectProps={{ native: true }}
             >
-              {/* Common musical key signatures */}
-              <MenuItem value="A">A</MenuItem>
-              <MenuItem value="A-">Ab</MenuItem>
-              <MenuItem value="B">B</MenuItem>
-              <MenuItem value="B-">Bb</MenuItem>
-              <MenuItem value="C">C</MenuItem>
-              <MenuItem value="C#">C#</MenuItem>
-              <MenuItem value="C-">Cb</MenuItem>
-              <MenuItem value="D">D</MenuItem>
-              <MenuItem value="D-">Db</MenuItem>
-              <MenuItem value="E">E</MenuItem>
-              <MenuItem value="E-">Eb</MenuItem>
-              <MenuItem value="F">F</MenuItem>
-              <MenuItem value="F#">F#</MenuItem>
-              <MenuItem value="G">G</MenuItem>
-              <MenuItem value="G-">Gb</MenuItem>
-              <MenuItem value="a">Am</MenuItem>
-              <MenuItem value="a-">Abm</MenuItem>
-              <MenuItem value="b">Bm</MenuItem>
-              <MenuItem value="b-">Bbm</MenuItem>
-              <MenuItem value="c">Cm</MenuItem>
-              <MenuItem value="c#">C#m</MenuItem>
-              <MenuItem value="c-">Cbm</MenuItem>
-              <MenuItem value="d">Dm</MenuItem>
-              <MenuItem value="d-">Dbm</MenuItem>
-              <MenuItem value="e">Em</MenuItem>
-              <MenuItem value="e-">Ebm</MenuItem>
-              <MenuItem value="f">Fm</MenuItem>
-              <MenuItem value="f#">F#m</MenuItem>
-              <MenuItem value="g">Gm</MenuItem>
-              <MenuItem value="g-">Gbm</MenuItem>
+              {keySignatures.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </TextField>
             <Button
               variant="contained"
