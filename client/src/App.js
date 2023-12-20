@@ -189,7 +189,7 @@ export default function App() {
   const handleSubmit = async () => {
     try {
       // Construct the URL with query parameters
-      const url = new URL('./xmlgen', window.location.href);
+      const url = new URL('./test_cm.xml', window.location.href);
       url.searchParams.append('notes', notes);
       url.searchParams.append('measures', measures);
       url.searchParams.append('key', key);
@@ -213,85 +213,108 @@ export default function App() {
     }
   };
 
+  const renderAppBar = () => {
+    return (
+    <AppBar>
+      <Toolbar>
+        <CMLogo
+           height='100%'
+           width='50px'
+           style={{ minWidth: '50px', mr: 2, ml: 2}}
+        />
+        <Typography
+          variant="h6"
+          noWrap
+          sx={{
+            mr: 2,
+            ml: 2,
+            display: { xs: 'none', md: 'flex' },
+            fontFamily: 'monospace',
+            fontWeight: 700,
+            letterSpacing: '.3rem',
+            color: 'inherit',
+            textDecoration: 'none',
+          }}
+        >
+          ChordMania
+        </Typography>
+        <TextField
+          label="Notes"
+          type="number"
+          value={notes}
+          onChange={handleNotesChange}
+          sx={{ mx: 2, my: 1, width: 60 }}
+          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', min: 1, max: 5 }}
+          size="small"
+        />
+        <TextField
+          label="Measures"
+          type="number"
+          sx={{ mx: 2, my: 1, width: 80 }}
+          inputProps={{ min: 1, max: 999 }}
+          size="small"
+          value={measures}
+          onChange={handleMeasuresChange}
+          InputLabelProps={{ shrink: true, }}
+        />
+        <TextField
+          select
+          label="Key"
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          sx={{ mx: 2, my: 1, width: 100 }}
+          size="small"
+          SelectProps={{ native: true }}
+        >
+          {keySignatures.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </TextField>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSubmit}
+          sx={{ mx: 2, my: 1, width: 120, height: 48 }}
+        >
+          Generate XML
+        </Button>
+      </Toolbar>
+    </AppBar>);
+  };
+
+  const renderBody = () => {
+    let content;
+
+    if (xmlData) {
+      // Case 1: 'xmlData' is specified
+      content = <MusicDisplayer key={xmlData} file={xmlData} />;
+    } else if (file) {
+      // Case 2: 'file' is specified and 'xmlData' is not specified or empty
+      content = <MusicDisplayer key={file} file={file} />;
+    } else {
+      // Case 3: Neither 'file' nor 'xmlData' is specified, or both are empty
+      content = <div>Instruction page content goes here</div>;
+    }
+
+    return (
+        content
+    );
+  };
+
   return (
     <ThemeProvider theme={lightTheme}>
       <CssBaseline />
       <Box>
-        <AppBar>
-          <Toolbar>
-            <CMLogo
-               height='100%'
-               width='50px'
-               style={{ minWidth: '50px', mr: 2, ml: 2}}
-            />
-            <Typography
-              variant="h6"
-              noWrap
-              sx={{
-                mr: 2,
-                ml: 2,
-                display: { xs: 'none', md: 'flex' },
-                fontFamily: 'monospace',
-                fontWeight: 700,
-                letterSpacing: '.3rem',
-                color: 'inherit',
-                textDecoration: 'none',
-              }}
-            >
-              ChordMania
-            </Typography>
-            <TextField
-              label="Notes"
-              type="number"
-              value={notes}
-              onChange={handleNotesChange}
-              sx={{ mx: 2, my: 1, width: 60 }}
-              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', min: 1, max: 5 }}
-              size="small"
-            />
-            <TextField
-              label="Measures"
-              type="number"
-              sx={{ mx: 2, my: 1, width: 80 }}
-              inputProps={{ min: 1, max: 999 }}
-              size="small"
-              value={measures}
-              onChange={handleMeasuresChange}
-              InputLabelProps={{ shrink: true, }}
-            />
-            <TextField
-              select
-              label="Key"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              sx={{ mx: 2, my: 1, width: 100 }}
-              size="small"
-              SelectProps={{ native: true }}
-            >
-              {keySignatures.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </TextField>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSubmit}
-              sx={{ mx: 2, my: 1, width: 120, height: 48 }}
-            >
-              Generate XML
-            </Button>
-          </Toolbar>
-        </AppBar>
+        {renderAppBar()}
         <Box component="main" sx={{ flexGrow: 1, p: 0 }}>
           <Toolbar />
-          <Typography paragraph>{xmlData}</Typography>
           <select onChange={(e) => setFile(e.target.value)}>
             <option value="MuzioClementi_SonatinaOpus36No1_Part2.xml">Muzio Clementi: Sonatina Opus 36 No1 Part2</option>
             <option value="Beethoven_AnDieFerneGeliebte.xml">Beethoven: An Die FerneGeliebte</option>
           </select>
-          {file !== '' && <MusicDisplayer key={file} file={file} />}
+          {renderBody()}
         </Box>
       </Box>
     </ThemeProvider>
