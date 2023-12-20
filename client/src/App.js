@@ -213,18 +213,24 @@ export default function App() {
 
   const handleSubmit = async () => {
     try {
-      // Construct the URL with query parameters
-      const url = new URL('./test_cm.xml', window.location.href);
+      // First try fetching from '/xmlgen'
+      let url = new URL('/xmlgen', window.location.href);
       url.searchParams.append('notes', notes);
       url.searchParams.append('measures', measures);
       url.searchParams.append('key', key);
 
       // Perform the fetch request
-      const response = await fetch(url);
+      let response = await fetch(url);
 
       // Check if the response is ok (status code in the range 200-299)
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // If the first attempt fails, try fetching the fallback file
+        url = new URL('./fallback_music.xml', window.location.href);
+        response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
       }
 
       // Get the response body (assuming it's in text format)
