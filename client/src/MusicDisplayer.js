@@ -56,6 +56,12 @@ export default class MusicDisplayer extends Component {
       return true;
     }
 
+    rewind() {
+      const cursor = this.osmd.cursor;
+      cursor.reset();
+      this.osmd.render();
+    }
+
     render() {
       return (<div ref={this.divRef} />);
     }

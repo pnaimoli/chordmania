@@ -4,6 +4,7 @@ import { AppBar, Box, CssBaseline, Toolbar, TextField, Button } from '@mui/mater
 import IconButton from '@mui/material/IconButton';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
+import FastRewindIcon from '@mui/icons-material/FastRewind';
 
 import './App.css';
 import {ReactComponent as MetronomeIcon} from './metronome.svg';
@@ -177,7 +178,11 @@ export default function App() {
           if (beatsCalled === 3) {
             // If this is the last beat, go back to 0 and advance the cursor
             beatsCalled = 0;
-            musicDisplayerRef.current.advanceCursor();
+            if (!musicDisplayerRef.current.advanceCursor()) {
+              // If we've reached the end of the music, stop playing
+              setIsPlaying(false);
+              musicDisplayerRef.current.rewind();
+            }
           } else {
             beatsCalled++;
           }
@@ -309,11 +314,23 @@ export default function App() {
         <div>
           <div className="sheetMusicContainer" style={{ position: 'relative' }}>
             <IconButton
-              onClick={() => setIsPlaying(!isPlaying)}
+              onClick={() => musicDisplayerRef.current.rewind()}
               style={{
                 position: 'absolute',
                 top: 10,
                 left: 10,
+                zIndex: 10, // Ensure it's above other elements
+                color: 'primary' // Adjust color as needed
+              }}
+            >
+              <FastRewindIcon />
+            </IconButton>
+            <IconButton
+              onClick={() => setIsPlaying(!isPlaying)}
+              style={{
+                position: 'absolute',
+                top: 10,
+                left: 60,
                 zIndex: 10, // Ensure it's above other elements
                 color: 'primary' // Adjust color as needed
               }}
