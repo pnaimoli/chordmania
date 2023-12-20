@@ -10,6 +10,7 @@ import './App.css';
 import {ReactComponent as MetronomeIcon} from './metronome.svg';
 import {ReactComponent as CMLogo} from './logo.svg';
 import MusicDisplayer from './MusicDisplayer';
+import packageInfo from '../package.json';
 
 const lightTheme = createTheme({
   palette: {
@@ -241,6 +242,10 @@ export default function App() {
     return (
     <AppBar>
       <Toolbar>
+        {/* Version Display */}
+        <div className="version-display">
+          ChordMania {packageInfo.version}
+        </div>
         <CMLogo
            height='100%'
            width='50px'
