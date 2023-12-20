@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { AppBar, Box, CssBaseline, Toolbar, Typography, TextField, Button } from '@mui/material';
 
+import './App.css';
+import {ReactComponent as MetronomeIcon} from './metronome.svg';
 import {ReactComponent as CMLogo} from './logo.svg';
 import MusicDisplayer from './MusicDisplayer';
 
@@ -170,11 +172,87 @@ const keySignatures = [
 ];
 
 export default function App() {
+  const musicDisplayerRef = useRef(null);
   const [notes, setNotes] = useState(4);
   const [measures, setMeasures] = useState(10);
   const [key, setKey] = useState('E-');
+  const [isPlaying, setIsPlaying] = useState(false);
   const [xmlData, setXmlData] = useState('');
-  const [file, setFile] = useState('MuzioClementi_SonatinaOpus36No1_Part2.xml');
+
+  // Initialize state with values from localStorage or default values
+  const [bpm, setBpm] = useState(localStorage.getItem('bpm') || 60);
+  const [isMetronomeOn, setIsMetronomeOn] = useState(localStorage.getItem('isMetronomeOn') !== null ? localStorage.getItem('isMetronomeOn') === 'true' : true);
+
+  // Use useEffect to save state changes to localStorage
+  useEffect(() => {
+      localStorage.setItem('bpm', bpm);
+  }, [bpm]);
+  useEffect(() => {
+      localStorage.setItem('isMetronomeOn', isMetronomeOn);
+  }, [isMetronomeOn]);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  // This is the main function that handles playing the metronome
+  // and initiating the animations.
+  ////////////////////////////////////////////////////////////////////////////////
+  useEffect(() => {
+    // We'd like to just do:
+    // const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    // but we can't since AudioContexts need to be created as a result of a user
+    // gesture and this function gets called pretty early on.
+    let audioContext;
+    let metronomeId;
+
+    if (isPlaying) {
+      // Calculate tick duration and metronome logic here
+      const tickDuration = (60 / bpm) * 1000; // Duration in milliseconds
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContext.resume(); // Safari doesn't play anything without this.
+
+      var beatsCalled = 0;
+      metronomeId = setInterval(() => {
+        if (isMetronomeOn) {
+          // Create a new oscillator for each tick
+          const oscillator = audioContext.createOscillator();
+          if (beatsCalled === 0) {
+            // For the 0th beat, set the higher pitch frequency
+            oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
+          } else {
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+          }
+            oscillator.type = 'square'; // Adjust as needed
+            oscillator.connect(audioContext.destination);
+            oscillator.start();
+
+            // Schedule the oscillator to stop after a short duration
+            oscillator.stop(audioContext.currentTime + 0.05); // Adjust the duration as needed
+          }
+
+          // If this is the first beat, find the next measure and initiate a
+          // hide transition
+          if (beatsCalled === 0) {
+            musicDisplayerRef.current.advanceCursor();
+          }
+
+          if (beatsCalled === 3) {
+            // If this is the last beat, go back to 0!
+            beatsCalled = 0;
+          } else {
+            beatsCalled++;
+          }
+      }, tickDuration);
+    }
+
+    // Cleanup
+    return () => {
+      clearInterval(metronomeId);
+
+      // Close the AudioContext when cleaning up
+      if (audioContext) {
+        audioContext.close();
+      }
+    };
+  }, [isPlaying, isMetronomeOn, bpm]);
 
   const handleNotesChange = (e) => {
     const value = Math.max(1, Math.min(5, Number(e.target.value)));
@@ -222,22 +300,6 @@ export default function App() {
            width='50px'
            style={{ minWidth: '50px', mr: 2, ml: 2}}
         />
-        <Typography
-          variant="h6"
-          noWrap
-          sx={{
-            mr: 2,
-            ml: 2,
-            display: { xs: 'none', md: 'flex' },
-            fontFamily: 'monospace',
-            fontWeight: 700,
-            letterSpacing: '.3rem',
-            color: 'inherit',
-            textDecoration: 'none',
-          }}
-        >
-          ChordMania
-        </Typography>
         <TextField
           label="Notes"
           type="number"
@@ -262,7 +324,7 @@ export default function App() {
           label="Key"
           value={key}
           onChange={(e) => setKey(e.target.value)}
-          sx={{ mx: 2, my: 1, width: 100 }}
+          sx={{ mx: 2, my: 1, width: 80 }}
           size="small"
           SelectProps={{ native: true }}
         >
@@ -272,6 +334,22 @@ export default function App() {
             </option>
           ))}
         </TextField>
+        <div className="MetronomeSettings">
+          <label>
+            <MetronomeIcon />:
+            <input type="checkbox" checked={isMetronomeOn} onChange={() => setIsMetronomeOn(!isMetronomeOn)}/>
+            <span className="MetronomeToggleText">
+              {isMetronomeOn ? 'ON' : 'OFF'}
+            </span>
+          </label>
+          <label>
+            <input type="range" min="40" max="240" value={bpm} onChange={(e) => (setBpm(e.target.value))} />
+            <span className="BPMText">
+              {bpm}
+            </span>
+            BPM
+          </label>
+        </div>
         <Button
           variant="contained"
           color="primary"
@@ -289,13 +367,35 @@ export default function App() {
 
     if (xmlData) {
       // Case 1: 'xmlData' is specified
-      content = <MusicDisplayer key={xmlData} file={xmlData} />;
-    } else if (file) {
-      // Case 2: 'file' is specified and 'xmlData' is not specified or empty
-      content = <MusicDisplayer key={file} file={file} />;
+      content = <MusicDisplayer
+                  key={xmlData}
+                  file={xmlData}
+                  ref={musicDisplayerRef}
+                />;
     } else {
-      // Case 3: Neither 'file' nor 'xmlData' is specified, or both are empty
-      content = <div>Instruction page content goes here</div>;
+      // Case 2: 'xmlData' is not specified
+      content = (
+        <div className="InstructionalContent">
+          <h2>Welcome to ChordMania</h2>
+            <div className="Instructions">
+              <div className="InstructionStep">
+                <span className="Icon">🎵</span>
+                <p>Start by setting your desired number of notes and measures using the input fields above.</p>
+              </div>
+              <div className="InstructionStep">
+                <span className="Icon">🗝️</span>
+                <p>Select the key for your composition from the 'Key' dropdown menu.</p>
+              </div>
+              <div className="InstructionStep">
+                <span className="Icon">⏱️</span>
+                <p>Adjust the metronome settings. Toggle the metronome ON or OFF and set the BPM (Beats Per Minute) as needed.</p>
+              </div>
+              <div className="InstructionStep">
+                <span className="Icon">📜</span>
+                <p>Click 'Generate XML' to create your custom MusicXML based on the specified notes, measures, and key.</p>
+              </div>
+            </div>
+          </div>);
     }
 
     return (
@@ -310,10 +410,6 @@ export default function App() {
         {renderAppBar()}
         <Box component="main" sx={{ flexGrow: 1, p: 0 }}>
           <Toolbar />
-          <select onChange={(e) => setFile(e.target.value)}>
-            <option value="MuzioClementi_SonatinaOpus36No1_Part2.xml">Muzio Clementi: Sonatina Opus 36 No1 Part2</option>
-            <option value="Beethoven_AnDieFerneGeliebte.xml">Beethoven: An Die FerneGeliebte</option>
-          </select>
           {renderBody()}
         </Box>
       </Box>
