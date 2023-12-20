@@ -484,7 +484,7 @@ class CMChordGenerator(CMMusicGenerator):
                 continue
 
             chord_span = random_chord[-1].pitch.midi - random_chord[0].pitch.midi
-            if chord_span < 5 or chord_span > 10:
+            if chord_span < 1.5*(num_notes-1) or chord_span > 10:
                 continue
 
             # Until Synthesia/MoonPiano/etc... can render better sheet music, disallow
