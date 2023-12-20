@@ -343,8 +343,8 @@ export default function App() {
             <IconButton
               onClick={() => musicDisplayerRef.current.rewind()}
               style={{
-                position: 'absolute',
-                top: 10,
+                position: 'fixed',
+                top: 70,
                 left: 10,
                 zIndex: 10, // Ensure it's above other elements
                 color: 'primary' // Adjust color as needed
@@ -355,8 +355,8 @@ export default function App() {
             <IconButton
               onClick={() => setIsPlaying(!isPlaying)}
               style={{
-                position: 'absolute',
-                top: 10,
+                position: 'fixed',
+                top: 70,
                 left: 60,
                 zIndex: 10, // Ensure it's above other elements
                 color: 'primary' // Adjust color as needed

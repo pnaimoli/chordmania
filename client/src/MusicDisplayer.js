@@ -52,14 +52,12 @@ export default class MusicDisplayer extends Component {
       }
 
       cursor.next();
-      this.osmd.render();
       return true;
     }
 
     rewind() {
       const cursor = this.osmd.cursor;
       cursor.reset();
-      this.osmd.render();
     }
 
     render() {
