@@ -73,6 +73,15 @@ const lightTheme = createTheme({
     },
     divider: 'rgba(0, 0, 0, 0.12)',
   },
+  components: {
+    MuiAppBar: {
+      styleOverrides: {
+        colorPrimary: {
+          backgroundColor: '#42a5f5', // Replace this with your primary.dark color
+        },
+      },
+    },
+  },
 });
 
 
