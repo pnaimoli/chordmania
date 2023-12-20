@@ -209,13 +209,21 @@ export default function App() {
   }, [isPlaying, isMetronomeOn, bpm]);
 
   const handleNotesChange = (e) => {
-    const value = Math.max(1, Math.min(5, Number(e.target.value)));
-    setNotes(value);
+    setNotes(e.target.value); // Update state with raw input value
+  };
+
+  const handleNotesBlur = () => {
+    const value = Math.max(1, Math.min(5, Number(notes)));
+    setNotes(value); // Correct the value on blur
   };
 
   const handleMeasuresChange = (e) => {
-    const value = Math.max(1, Math.min(999, Number(e.target.value)));
-    setMeasures(value);
+    setMeasures(e.target.value); // Update state with raw input value
+  };
+
+  const handleMeasuresBlur = () => {
+    const value = Math.max(1, Math.min(999, Number(measures)));
+    setMeasures(value); // Correct the value on blur
   };
 
   const handleSubmit = async () => {
@@ -278,6 +286,7 @@ export default function App() {
           type="number"
           value={notes}
           onChange={handleNotesChange}
+          onBlur={handleNotesBlur}
           sx={{ mx: 2, my: 1, width: 60 }}
           inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', min: 1, max: 5 }}
           size="small"
@@ -290,6 +299,7 @@ export default function App() {
           size="small"
           value={measures}
           onChange={handleMeasuresChange}
+          onBlur={handleMeasuresBlur}
           InputLabelProps={{ shrink: true, }}
         />
         <TextField
