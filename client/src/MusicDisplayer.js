@@ -11,10 +11,12 @@ export default class MusicDisplayer extends Component {
     componentDidMount() {
       if (!this.osmd) {
         const options = {
-          autoResize: this.props.autoResize !== undefined ? this.props.autoResize : true,
-          drawTitle: this.props.drawTitle !== undefined ? this.props.drawTitle : true,
+          autoResize: true,
+          drawTitle: true,
+          followCursor: true,
         };
-        this.osmd = new OSMD(this.divRef.current, options);      }
+        this.osmd = new OSMD(this.divRef.current, options);
+      }
         this.osmd.load(this.props.file).then(() => {
           this.osmd.render();
           this.initializeCursor();
@@ -45,13 +47,13 @@ export default class MusicDisplayer extends Component {
 
     advanceCursor() {
       const cursor = this.osmd.cursor;
-      const note = cursor.iterator.currentNote;
-      if (note) {
-        cursor.next();
-        this.osmd.render();
-        return true;
+      if (cursor.iterator.endReached) {
+        return false;
       }
-      return false;
+
+      cursor.next();
+      this.osmd.render();
+      return true;
     }
 
     render() {

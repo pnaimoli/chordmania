@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { AppBar, Box, CssBaseline, Toolbar, Typography, TextField, Button } from '@mui/material';
+import { AppBar, Box, CssBaseline, Toolbar, TextField, Button } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
 
 import './App.css';
 import {ReactComponent as MetronomeIcon} from './metronome.svg';
@@ -228,15 +231,10 @@ export default function App() {
             oscillator.stop(audioContext.currentTime + 0.05); // Adjust the duration as needed
           }
 
-          // If this is the first beat, find the next measure and initiate a
-          // hide transition
-          if (beatsCalled === 0) {
-            musicDisplayerRef.current.advanceCursor();
-          }
-
           if (beatsCalled === 3) {
-            // If this is the last beat, go back to 0!
+            // If this is the last beat, go back to 0 and advance the cursor
             beatsCalled = 0;
+            musicDisplayerRef.current.advanceCursor();
           } else {
             beatsCalled++;
           }
@@ -363,18 +361,33 @@ export default function App() {
   };
 
   const renderBody = () => {
-    let content;
-
     if (xmlData) {
-      // Case 1: 'xmlData' is specified
-      content = <MusicDisplayer
-                  key={xmlData}
-                  file={xmlData}
-                  ref={musicDisplayerRef}
-                />;
+      return (
+        <div>
+          <div className="sheetMusicContainer" style={{ position: 'relative' }}>
+            <IconButton
+              onClick={() => setIsPlaying(!isPlaying)}
+              style={{
+                position: 'absolute',
+                top: 10,
+                left: 10,
+                zIndex: 10, // Ensure it's above other elements
+                color: 'primary' // Adjust color as needed
+              }}
+            >
+              {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+            </IconButton>
+          </div>
+          <MusicDisplayer
+                    key={xmlData}
+                    file={xmlData}
+                    ref={musicDisplayerRef}
+                  />
+        </div>
+        );
     } else {
       // Case 2: 'xmlData' is not specified
-      content = (
+      return (
         <div className="InstructionalContent">
           <h2>Welcome to ChordMania</h2>
             <div className="Instructions">
@@ -395,12 +408,9 @@ export default function App() {
                 <p>Click 'Generate XML' to create your custom MusicXML based on the specified notes, measures, and key.</p>
               </div>
             </div>
-          </div>);
+          </div>
+        );
     }
-
-    return (
-        content
-    );
   };
 
   return (
