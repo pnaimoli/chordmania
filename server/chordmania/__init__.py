@@ -7,6 +7,7 @@ include chords for both hands.
 
 import argparse
 import logging
+import os
 import random
 import music21
 from music21.musicxml import m21ToXml
@@ -15,11 +16,12 @@ from music21.musicxml import m21ToXml
 # defaultDuration = 10080 that music21 does.
 music21.defaults.divisionsPerQuarter = 4
 
-us = music21.environment.UserSettings()
-#us['musicxmlPath'] = "/usr/local/bin/mscore"
-#us['musescoreDirectPNGPath'] = "/usr/local/bin/mscore"
-us['musicxmlPath'] = "/Users/peter/Applications/MuseScore 4.app"
-us['musescoreDirectPNGPath'] = "/Users/peter/Applications/MuseScore 4.app"
+if os.path.exists("/Applications/MuseScore 4.app"):
+    us = music21.environment.UserSettings()
+    #us['musicxmlPath'] = "/usr/local/bin/mscore"
+    #us['musescoreDirectPNGPath'] = "/usr/local/bin/mscore"
+    #us['musicxmlPath'] = "/Users/peter/Applications/MuseScore 4.app"
+    #us['musescoreDirectPNGPath'] = "/Users/peter/Applications/MuseScore 4.app"
 
 # I'm not interested in performance, I just want to eliminate duplicates
 # in one line by using a python set

@@ -214,7 +214,7 @@ export default function App() {
   const handleSubmit = async () => {
     try {
       // First try fetching from '/xmlgen'
-      let url = new URL('/xmlgen', window.location.href);
+      let url = new URL('./xmlgen', window.location.href);
       url.searchParams.append('notes', notes);
       url.searchParams.append('measures', measures);
       url.searchParams.append('key', key);
