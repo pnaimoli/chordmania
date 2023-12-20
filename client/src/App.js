@@ -150,6 +150,7 @@ export default function App() {
     // gesture and this function gets called pretty early on.
     let audioContext;
     let metronomeId;
+    let firstTick = true;  // Flag to track if it's the first metronome tick
 
     if (isPlaying) {
       // Calculate tick duration and metronome logic here
@@ -168,25 +169,31 @@ export default function App() {
           } else {
             oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
           }
-            oscillator.type = 'square'; // Adjust as needed
-            oscillator.connect(audioContext.destination);
-            oscillator.start();
 
-            // Schedule the oscillator to stop after a short duration
-            oscillator.stop(audioContext.currentTime + 0.05); // Adjust the duration as needed
-          }
+          oscillator.type = 'square'; // Adjust as needed
+          oscillator.connect(audioContext.destination);
+          oscillator.start();
 
-          if (beatsCalled === 3) {
-            // If this is the last beat, go back to 0 and advance the cursor
-            beatsCalled = 0;
-            if (!musicDisplayerRef.current.advanceCursor()) {
-              // If we've reached the end of the music, stop playing
-              setIsPlaying(false);
-              musicDisplayerRef.current.rewind();
-            }
-          } else {
-            beatsCalled++;
+          // Schedule the oscillator to stop after a short duration
+          oscillator.stop(audioContext.currentTime + 0.05); // Adjust the duration as needed
+        }
+
+        // Only advance the cursor if it's not the first tick
+        if (beatsCalled === 0 && !firstTick) {
+          if (!musicDisplayerRef.current.advanceCursor()) {
+            setIsPlaying(false);
+            musicDisplayerRef.current.rewind();
           }
+        } else if (beatsCalled === 0 && firstTick) {
+          firstTick = false;  // Set the flag to false after the first tick
+        }
+
+        if (beatsCalled === 3) {
+          // If this is the last beat, go back to 0 and advance the cursor
+          beatsCalled = 0;
+        } else {
+          beatsCalled++;
+        }
       }, tickDuration);
     }
 
@@ -213,14 +220,23 @@ export default function App() {
 
   const handleSubmit = async () => {
     try {
+      // Use a timestamp to ensure uniqueness of the request
+      const cacheBuster = new Date().getTime();
+
       // First try fetching from '/xmlgen'
       let url = new URL('./xmlgen', window.location.href);
       url.searchParams.append('notes', notes);
       url.searchParams.append('measures', measures);
       url.searchParams.append('key', key);
+      url.searchParams.append('_cb', cacheBuster);  // Append cache-busting query parameter
+
+      // Fetch options with cache disabled
+      const fetchOptions = {
+        cache: 'no-store'
+      };
 
       // Perform the fetch request
-      let response = await fetch(url);
+      let response = await fetch(url, fetchOptions);
 
       // Check if the response is ok (status code in the range 200-299)
       if (!response.ok) {
