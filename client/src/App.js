@@ -3,45 +3,136 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { AppBar, Box, CssBaseline, Toolbar, Typography, TextField, Button } from '@mui/material';
 
 import {ReactComponent as CMLogo} from './logo.svg';
+import MusicDisplayer from './MusicDisplayer';
 
-const theme = createTheme({
+const lightTheme = createTheme({
   palette: {
+    mode: 'light', // Set mode to light
     primary: {
-      main: '#556cd6',
+      main: '#90caf9',
+      light: '#e3f2fd',
+      dark: '#42a5f5',
+      contrastText: '#000', // Dark text for light backgrounds
     },
     secondary: {
-      main: '#19857b',
+      main: '#f48fb1',
+      light: '#f8bbd0',
+      dark: '#c2185b',
+      contrastText: '#000',
     },
     error: {
-      main: '#ff5252',
+      main: '#f44336',
+      light: '#e57373',
+      dark: '#d32f2f',
+      contrastText: '#000',
     },
-    background: {
-      default: '#fff',
+    warning: {
+      main: '#ff9800',
+      light: '#ffb74d',
+      dark: '#f57c00',
+      contrastText: 'rgba(0, 0, 0, 0.87)',
     },
+    info: {
+      main: '#2196f3',
+      light: '#64b5f6',
+      dark: '#1976d2',
+      contrastText: '#000',
+    },
+    success: {
+      main: '#4caf50',
+      light: '#81c784',
+      dark: '#388e3c',
+      contrastText: 'rgba(0, 0, 0, 0.87)',
+    },
+    grey: {
+      50: '#fafafa',
+      100: '#f5f5f5',
+      200: '#eeeeee',
+      300: '#e0e0e0',
+      400: '#bdbdbd',
+      500: '#9e9e9e',
+      600: '#757575',
+      700: '#616161',
+      800: '#424242',
+      900: '#212121',
+      A100: '#d5d5d5',
+      A200: '#aaaaaa',
+      A400: '#303030',
+      A700: '#616161',
+    },
+    text: {
+      primary: 'rgba(0, 0, 0, 0.87)', // Black text for light backgrounds
+      secondary: 'rgba(0, 0, 0, 0.54)',
+      disabled: 'rgba(0, 0, 0, 0.38)',
+      hint: 'rgba(0, 0, 0, 0.38)',
+    },
+    divider: 'rgba(0, 0, 0, 0.12)',
   },
-  components: {
-    // Override styles for the Outlined Input
-    MuiOutlinedInput: {
-      styleOverrides: {
-        root: {
-          // Style overrides here
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#000', // Your desired color for the border
-          },
-        },
-      },
+});
+
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#90caf9',
+      light: '#a6d4fa',
+      dark: '#648dae',
+      contrastText: '#fff',
     },
-    // Override styles for the Input Label
-    MuiInputLabel: {
-      styleOverrides: {
-        root: {
-          // Style overrides here
-          '&.Mui-focused': {
-            color: '#000',
-          },
-        },
-      },
+    secondary: {
+      main: '#f48fb1',
+      light: '#f6a5c0',
+      dark: '#aa647b',
+      contrastText: '#fff',
     },
+    error: {
+      main: '#f44336',
+      light: '#e57373',
+      dark: '#d32f2f',
+      contrastText: '#fff',
+    },
+    warning: {
+      main: '#ff9800',
+      light: '#ffb74d',
+      dark: '#f57c00',
+      contrastText: 'rgba(0, 0, 0, 0.87)',
+    },
+    info: {
+      main: '#2196f3',
+      light: '#64b5f6',
+      dark: '#1976d2',
+      contrastText: '#fff',
+    },
+    success: {
+      main: '#4caf50',
+      light: '#81c784',
+      dark: '#388e3c',
+      contrastText: 'rgba(0, 0, 0, 0.87)',
+    },
+    grey: {
+      50: '#fafafa',
+      100: '#f5f5f5',
+      200: '#eeeeee',
+      300: '#e0e0e0',
+      400: '#bdbdbd',
+      500: '#9e9e9e',
+      600: '#757575',
+      700: '#616161',
+      800: '#424242',
+      900: '#212121',
+      A100: '#d5d5d5',
+      A200: '#aaaaaa',
+      A400: '#303030',
+      A700: '#616161',
+    },
+    text: {
+      primary: '#fff',
+      secondary: 'rgba(255, 255, 255, 0.7)',
+      disabled: 'rgba(255, 255, 255, 0.5)',
+      hint: 'rgba(255, 255, 255, 0.5)',
+    },
+    divider: 'rgba(255, 255, 255, 0.12)',
   },
 });
 
@@ -81,8 +172,9 @@ const keySignatures = [
 export default function App() {
   const [notes, setNotes] = useState(4);
   const [measures, setMeasures] = useState(10);
-  const [key, setKey] = useState('E');
+  const [key, setKey] = useState('E-');
   const [xmlData, setXmlData] = useState('');
+  const [file, setFile] = useState('MuzioClementi_SonatinaOpus36No1_Part2.xml');
 
   const handleNotesChange = (e) => {
     const value = Math.max(1, Math.min(5, Number(e.target.value)));
@@ -122,14 +214,15 @@ export default function App() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={lightTheme}>
+      <CssBaseline />
       <Box>
-        <CssBaseline />
         <AppBar>
           <Toolbar>
             <CMLogo
-               height='auto'
-               width='50'
+               height='100%'
+               width='50px'
+               style={{ minWidth: '50px', mr: 2, ml: 2}}
             />
             <Typography
               variant="h6"
@@ -194,6 +287,11 @@ export default function App() {
         <Box component="main" sx={{ flexGrow: 1, p: 0 }}>
           <Toolbar />
           <Typography paragraph>{xmlData}</Typography>
+          <select onChange={(e) => setFile(e.target.value)}>
+            <option value="MuzioClementi_SonatinaOpus36No1_Part2.xml">Muzio Clementi: Sonatina Opus 36 No1 Part2</option>
+            <option value="Beethoven_AnDieFerneGeliebte.xml">Beethoven: An Die FerneGeliebte</option>
+          </select>
+          {file !== '' && <MusicDisplayer key={file} file={file} />}
         </Box>
       </Box>
     </ThemeProvider>
