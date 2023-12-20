@@ -9,6 +9,8 @@ import os
 
 from flask import Flask, request, send_from_directory
 import music21
+
+import sys; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import chordmania
 
 app = Flask(__name__, static_folder='client')
