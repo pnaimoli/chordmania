@@ -51,6 +51,15 @@ export default class MusicDisplayer extends Component {
         return false;
       }
 
+      // Check if the cursor is at the last measure.  For some reason
+      // OSMD lets you advance to the last barline.
+      const currentMeasureIndex = cursor.iterator.currentMeasureIndex;
+      const totalMeasures = this.osmd.sheet.sourceMeasures.length;
+      if (currentMeasureIndex >= totalMeasures - 1) {
+        // We are at the last measure, so don't advance the cursor
+        return false;
+      }
+
       cursor.next();
       return true;
     }

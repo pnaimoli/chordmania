@@ -339,7 +339,7 @@ export default function App() {
           onClick={handleSubmit}
           sx={{ mx: 2, my: 1, width: 120, height: 48 }}
         >
-          Generate XML
+          Generate
         </Button>
       </Toolbar>
     </AppBar>);

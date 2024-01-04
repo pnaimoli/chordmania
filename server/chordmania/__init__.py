@@ -248,6 +248,11 @@ class CMStreamGenerator(CMMusicGenerator):
         # Add the part to the score
         self.score.append(part)
 
+        # Insert final barline
+        last_measure = self.score.parts[0].getElementsByClass('Measure')[-1]  # Get the last measure of the first part
+        final_barline = music21.bar.Barline(type='final')  # Create a final barline
+        last_measure.rightBarline = final_barline  # Assign the final barline to the last measure
+
 
 class CMFourFiveStreamGenerator(CMMusicGenerator):
     """
@@ -302,6 +307,11 @@ class CMFourFiveStreamGenerator(CMMusicGenerator):
                 right_hand.append(chord)
 
         self.score.insert(0, right_hand)
+
+        # Insert final barline
+        last_measure = self.score.parts[0].getElementsByClass('Measure')[-1]  # Get the last measure of the first part
+        final_barline = music21.bar.Barline(type='final')  # Create a final barline
+        last_measure.rightBarline = final_barline  # Assign the final barline to the last measure
 
     @staticmethod
     def get_white_notes_between(start, end):
@@ -367,6 +377,11 @@ class CMChordGenerator(CMMusicGenerator):
             self.score.append(staff_group)
 
         self.score.append(parts)
+
+        # Insert final barline
+        last_measure = self.score.parts[0].getElementsByClass('Measure')[-1]  # Get the last measure of the first part
+        final_barline = music21.bar.Barline(type='final')  # Create a final barline
+        last_measure.rightBarline = final_barline  # Assign the final barline to the last measure
 
         # Finalize some metadata
         metadata = self.score.getElementsByClass(music21.metadata.Metadata).stream().next()
