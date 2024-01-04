@@ -226,7 +226,9 @@ export default function App() {
     setMeasures(value); // Correct the value on blur
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event) => {
+    event.preventDefault();  // This line prevents the default form submission behavior
+
     setIsPlaying(false);  // Stop the metronome if it's playing
     try {
       // Use a timestamp to ensure uniqueness of the request
@@ -282,66 +284,77 @@ export default function App() {
            width='50px'
            style={{ minWidth: '50px', mr: 2, ml: 2}}
         />
-        <TextField
-          label="Notes"
-          type="number"
-          value={notes}
-          onChange={handleNotesChange}
-          onBlur={handleNotesBlur}
-          sx={{ mx: 2, my: 1, width: 60 }}
-          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', min: 1, max: 5 }}
-          size="small"
-        />
-        <TextField
-          label="Measures"
-          type="number"
-          sx={{ mx: 2, my: 1, width: 80 }}
-          inputProps={{ min: 1, max: 999 }}
-          size="small"
-          value={measures}
-          onChange={handleMeasuresChange}
-          onBlur={handleMeasuresBlur}
-          InputLabelProps={{ shrink: true, }}
-        />
-        <TextField
-          select
-          label="Key"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          sx={{ mx: 2, my: 1, width: 80 }}
-          size="small"
-          SelectProps={{ native: true }}
-        >
-          {keySignatures.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </TextField>
-        <div className="MetronomeSettings">
-          <label>
-            <MetronomeIcon />:
-            <input type="checkbox" checked={isMetronomeOn} onChange={() => setIsMetronomeOn(!isMetronomeOn)}/>
-            <span className="MetronomeToggleText">
-              {isMetronomeOn ? 'ON' : 'OFF'}
-            </span>
-          </label>
-          <label>
-            <input type="range" min="40" max="240" value={bpm} onChange={(e) => (setBpm(e.target.value))} />
-            <span className="BPMText">
-              {bpm}
-            </span>
-            BPM
-          </label>
-        </div>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSubmit}
-          sx={{ mx: 2, my: 1, width: 120, height: 48 }}
-        >
-          Generate
-        </Button>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+          <TextField
+            label="Notes"
+            id="notes-input"
+            name="notes-input"
+            type="number"
+            value={notes}
+            onChange={handleNotesChange}
+            onBlur={handleNotesBlur}
+            sx={{ mx: 2, my: 1, width: 60 }}
+            inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', min: 1, max: 5 }}
+            size="small"
+          />
+          <TextField
+            label="Measures"
+            id="measures-input"
+            name="measures-input"
+            type="number"
+            sx={{ mx: 2, my: 1, width: 80 }}
+            inputProps={{ min: 1, max: 999 }}
+            size="small"
+            value={measures}
+            onChange={handleMeasuresChange}
+            onBlur={handleMeasuresBlur}
+            InputLabelProps={{ shrink: true, }}
+          />
+          <TextField
+            select
+            label="Key"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            sx={{ mx: 2, my: 1, width: 80 }}
+            size="small"
+            SelectProps={{ native: true }}
+          >
+            {keySignatures.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </TextField>
+          <div className="MetronomeSettings">
+            <label>
+              <MetronomeIcon />:
+              <input
+                id="metronome-toggle"
+                name="metronome-toggle"
+                type="checkbox"
+                checked={isMetronomeOn}
+                onChange={() => setIsMetronomeOn(!isMetronomeOn)}/>
+              <span className="MetronomeToggleText">
+                {isMetronomeOn ? 'ON' : 'OFF'}
+              </span>
+            </label>
+            <label>
+              <input type="range" min="40" max="240" value={bpm} onChange={(e) => (setBpm(e.target.value))} />
+              <span className="BPMText">
+                {bpm}
+              </span>
+              BPM
+            </label>
+          </div>
+          <Button
+            variant="contained"
+            color="primary"
+            type="submit"
+            sx={{ mx: 2, my: 1, width: 120, height: 48 }}
+          >
+            Generate
+          </Button>
+        </form>
       </Toolbar>
     </AppBar>);
   };
