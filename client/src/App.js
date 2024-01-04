@@ -87,36 +87,36 @@ const lightTheme = createTheme({
 });
 
 const keySignatures = [
-  { value: "A", label: "A" },
-  { value: "A-", label: "Ab" },
-  { value: "B", label: "B" },
-  { value: "B-", label: "Bb" },
-  { value: "C", label: "C" },
-  { value: "C#", label: "C#" },
-  { value: "C-", label: "Cb" },
-  { value: "D", label: "D" },
-  { value: "D-", label: "Db" },
-  { value: "E", label: "E" },
-  { value: "E-", label: "Eb" },
-  { value: "F", label: "F" },
-  { value: "F#", label: "F#" },
-  { value: "G", label: "G" },
-  { value: "G-", label: "Gb" },
-  { value: "a", label: "Am" },
-  { value: "a-", label: "Abm" },
-  { value: "b", label: "Bm" },
-  { value: "b-", label: "Bbm" },
-  { value: "c", label: "Cm" },
-  { value: "c#", label: "C#m" },
-  { value: "c-", label: "Cbm" },
-  { value: "d", label: "Dm" },
-  { value: "d-", label: "Dbm" },
-  { value: "e", label: "Em" },
-  { value: "e-", label: "Ebm" },
-  { value: "f", label: "Fm" },
-  { value: "f#", label: "F#m" },
-  { value: "g", label: "Gm" },
-  { value: "g-", label: "Gbm" }
+  { value: "C", label: "C" }, // 0 accidentals
+  { value: "G", label: "G" }, // 1 sharp
+  { value: "D", label: "D" }, // 2 sharps
+  { value: "A", label: "A" }, // 3 sharps
+  { value: "E", label: "E" }, // 4 sharps
+  { value: "B", label: "B" }, // 5 sharps
+  { value: "F#", label: "F#" }, // 6 sharps
+  { value: "C#", label: "C#" }, // 7 sharps
+  { value: "F", label: "F" }, // 1 flat
+  { value: "B-", label: "Bb" }, // 2 flats
+  { value: "E-", label: "Eb" }, // 3 flats
+  { value: "A-", label: "Ab" }, // 4 flats
+  { value: "D-", label: "Db" }, // 5 flats
+  { value: "G-", label: "Gb" }, // 6 flats
+  { value: "C-", label: "Cb" }, // 7 flats
+  { value: "a", label: "Am" }, // 0 accidentals
+  { value: "e", label: "Em" }, // 1 sharp
+  { value: "b", label: "Bm" }, // 2 sharps
+  { value: "f#", label: "F#m" }, // 3 sharps
+  { value: "c#", label: "C#m" }, // 4 sharps
+  { value: "g#", label: "G#m" }, // 5 sharps
+  { value: "d#", label: "D#m" }, // 6 sharps
+  { value: "a#", label: "A#m" }, // 7 sharps
+  { value: "d", label: "Dm" }, // 1 flat
+  { value: "g", label: "Gm" }, // 2 flats
+  { value: "c", label: "Cm" }, // 3 flats
+  { value: "f", label: "Fm" }, // 4 flats
+  { value: "b-", label: "Bbm" }, // 5 flats
+  { value: "e-", label: "Ebm" }, // 6 flats
+  { value: "a-", label: "Abm" } // 7 flats
 ];
 
 export default function App() {
