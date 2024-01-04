@@ -390,6 +390,20 @@ class CMChordGenerator(CMMusicGenerator):
                 f"{len(self._get_all_chords(self.score))} chords are unique."
                 )
 
+        # I can't figure out how to get music21 to not display the courtesy
+        # accidentals, so I'm just going to set them to not display.
+        for n in self.score.recurse().notes:
+            if isinstance(n, music21.note.Note) and n.pitch.accidental is not None:
+                n.pitch.accidental.displayStatus = False
+            elif isinstance(n, music21.chord.Chord):
+                for p in n.pitches:
+                    if not p.accidental:
+                        acc = music21.pitch.Accidental('natural')  # or any other accidental you need
+                        acc.displayStatus = False
+                        p.accidental = acc
+                    elif key.accidentalByStep(p.step):
+                        p.accidental.displayStatus = False
+
     def _generate_part(self, notes_per_chord, num_chords, key, left_hand):
         """
         Generate a part of the score with the specified parameters.
