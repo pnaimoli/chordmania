@@ -227,6 +227,7 @@ export default function App() {
   };
 
   const handleSubmit = async () => {
+    setIsPlaying(false);  // Stop the metronome if it's playing
     try {
       // Use a timestamp to ensure uniqueness of the request
       const cacheBuster = new Date().getTime();
