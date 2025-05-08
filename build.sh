@@ -13,5 +13,5 @@ mkdir -p build/client
 rm -rf build/client/*
 cp -r client/build/* build/client/
 mkdir -p build/chordmania
-cp -p server/{xmlserver.py,requirements.txt,wsgi.py} build/
+cp -p server/{xmlserver.py,requirements.txt,wsgi.py,gunicorn_config.py} build/
 cp -p server/chordmania/*.py build/chordmania
