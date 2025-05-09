@@ -28,7 +28,7 @@ ChordMania originally started as a simple tool for generating chord worksheets t
 The project is organized into several key directories:
 
 - **client/**: Contains the React code for the web application's frontend.
-- **server/**: 
+- **server/**:
   - **chordmania/**: The original ChordMania library for generating chord worksheets.
   - **xmlserver.py**: A Flask server for serving the web application and handling backend logic.
 - **build/** - The production directory. It contains the build the final build.
@@ -38,7 +38,7 @@ The project is organized into several key directories:
 The installation and running of the project are currently handled through an ad-hoc series of steps. Follow these instructions to set up and run a test server on your machine:
 
 1. **Prepare the Server Directory:**
-   - Run `./build.sh`.
+   - Run `make build`.
 
 5. **Run the Test Server:**
    - You can now run a test server on your machine. In the `build` directory, use the command `python measure_hider_modeler.py` to start the server.
